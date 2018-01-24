@@ -240,7 +240,7 @@ tedata <- setNames(tedata,c("Year","Player","Age","Season","Round","Overall",
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
   
-  dashboardHeader(title = "Fantasy Stats"),
+  dashboardHeader(title = "FF Statistics"),
   
   dashboardSidebar(
     sidebarMenu(
@@ -270,19 +270,23 @@ ui <- dashboardPage(
             br(),
             br(),
             strong("Start/Sit Tool"),
-              ("- Compares two players based on percentage each player hits X amount of points, with graphs!"),
+              ("– Compares two players based on percentage each player hits X amount of points, with graphs!"),
             br(),
             br(),
             strong("Consistency Data"),
-              ("- Datatable of each player's consistency stats based on average and standard deviation, and more!"),
+              ("– Datatable of each player’s consistency stats based on average and standard deviation, and more!"),
             br(),
             br(),
             strong("Weekly Data"),
-              ("- Datatable of every player's weekly production (points and rank) since 2010."),
+              ("– Datatable of every player’s weekly production (points and rank) since 2010."),
             br(),
             br(),
             strong("Yearly Data"),
-              ("- Datatable of every player's yearly production (points and rank) since 2010."),
+              ("- Two tabs:"),
+            br(),
+              ("1) Datatable of every player’s yearly production (points and rank) since 2010."),
+            br(),
+              ("2) Chart and datatable of each player's yeary production (rank) since 2010."),
             br(),
             br(),
             strong("Defense Data"),
@@ -294,7 +298,7 @@ ui <- dashboardPage(
             br(),
             br(),
             strong("Database"),
-              ("- A massive, user-controlled fantasy football database in which you control the stats you want to see from the players you want to see. "),
+              ("– A massive, user-controlled fantasy football database in which you control the stats you want to see from the players you want to see. "),
             br(),
             br(),
             "We are always looking to improve the site! If you notice any bugs or errors, or want to see other stats and data, message Addison Hayes (@amazehayes_roto) on Twitter or email ajh5737@gmail.com with suggestions, comments, or questions!",
@@ -305,20 +309,24 @@ ui <- dashboardPage(
             ),
     
     tabItem(tabName = "tool",
-            fluidRow(column(6, selectInput("con_playerA", "Choose Player A:",
+            fluidRow(
+              column(6, selectInput("format", "Choose Scoring Format:",
+                                    c("PPR (4pt/TD)", "1/2PPR","Standard","PPR (6pt/TD)"),
+                                    selected = "PPR (4pt/TD)"))),
+            fluidRow(
+              column(6, selectInput("con_playerA", "Choose Player A:",
                                            unique(as.character(weekly_data$Player)),
                                            selected = "Aaron Rodgers")),
-                     (column(6, selectInput("con_playerB", "Choose Player B:",
+              column(6, selectInput("con_playerB", "Choose Player B:",
                                                unique(as.character(weekly_data$Player)),
-                                               selected = "Drew Brees")))),
+                                               selected = "Drew Brees"))),
             fluidRow(column(6, numericInput("con_numberA", "Select Points Needed (Greater Than):",
                                             value = 20, min = 0, max = 50, step = 0.1)),
                      column(6, numericInput("con_numberB", "Select Points Needed (Greater Than):",
                                             value = 20, min = 0 , max = 50, step = 0.1))),
             fluidRow(column(6, verbatimTextOutput("probA")),
-                     column(6, verbatimTextOutput("probB")),
-            fluidRow(column(6,plotOutput("con_graphA")),
-                     column(6,plotOutput("con_graphB"))))),
+                     column(6, verbatimTextOutput("probB"))),
+            fluidRow(column(6,plotOutput("con_graphA")))),
       
     tabItem(tabName = "consistency",
             fluidRow(
@@ -509,60 +517,203 @@ server <- function(input, output) {
     
     consistency
     
-  }, rownames = FALSE,extensions = 'Buttons',options = list(lengthMenu = c(12,24,36,50),dom = 'Bfrtip', buttons = c('excel',
+  }, rownames = FALSE, filter = "top", extensions = 'Buttons',options = list(lengthMenu = c(12,24,36,50),dom = 'Bfrtip', buttons = c('excel',
                                                                                               'csv','copy')))
   
   #Print Start/Sit Tool
   output$probA <- renderText({
-    x <- as.matrix(weekly_data[,2:120])
-    rownames(x) <- weekly_data$Player
-    pointsA <- input$con_numberA
-    count <- 0
     
-    p1 <- x[(input$con_playerA),]
-    
-    for (i in 1:length(p1)) {
-      if(p1[i] >= pointsA & !is.na(p1[i])) {
-        count = sum(p1>=pointsA, na.rm = TRUE)
+    if(input$format == "PPR (4pt/TD)") {
+      x <- as.matrix(weekly_data[1576:2098,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      pointsA <- input$con_numberA
+      count <- 0
+      
+      p1 <- x[(input$con_playerA),]
+      
+      for (i in 1:length(p1)) {
+        if(p1[i] >= pointsA & !is.na(p1[i])) {
+          count = sum(p1>=pointsA, na.rm = TRUE)
+        }
       }
+      a <- count/length(na.omit(p1))
     }
-    a <- count/length(na.omit(p1))
-    paste(signif(a, digits = 4)*100,"%")
+    
+    if(input$format == "PPR (6pt/TD)") {
+      x <- as.matrix(weekly_data[1051:1573,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      pointsA <- input$con_numberA
+      count <- 0
+      
+      p1 <- x[(input$con_playerA),]
+      
+      for (i in 1:length(p1)) {
+        if(p1[i] >= pointsA & !is.na(p1[i])) {
+          count = sum(p1>=pointsA, na.rm = TRUE)
+        }
+      }
+      a <- count/length(na.omit(p1))
+    }
+    
+    if(input$format == "1/2PPR") {
+      x <- as.matrix(weekly_data[1:523,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      pointsA <- input$con_numberA
+      count <- 0
+      
+      p1 <- x[(input$con_playerA),]
+      
+      for (i in 1:length(p1)) {
+        if(p1[i] >= pointsA & !is.na(p1[i])) {
+          count = sum(p1>=pointsA, na.rm = TRUE)
+        }
+      }
+      a <- count/length(na.omit(p1))
+    }
+    
+    if(input$format == "Standard") {
+      x <- as.matrix(weekly_data[526:1048,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      pointsA <- input$con_numberA
+      count <- 0
+      
+      p1 <- x[(input$con_playerA),]
+      
+      for (i in 1:length(p1)) {
+        if(p1[i] >= pointsA & !is.na(p1[i])) {
+          count = sum(p1>=pointsA, na.rm = TRUE)
+        }
+      }
+      a <- count/length(na.omit(p1))
+    }
+    
+    paste(signif(a, digits = 4)*100,"% - (RED)")
+    
   })
   
   output$probB <- renderText({
-    x <- as.matrix(weekly_data[,2:120])
-    rownames(x) <- weekly_data$Player
-    pointsB <- input$con_numberB
-    count <- 0
     
-    p2 <- x[(input$con_playerB),]
-    
-    for (i in 1:length(p2)) {
-      if(p2[i] >= pointsB & !is.na(p2[i])) {
-        count = sum(p2>=pointsB, na.rm = TRUE)
+    if(input$format == "PPR (4pt/TD)") {
+      x <- as.matrix(weekly_data[1576:2098,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      pointsB <- input$con_numberB
+      count <- 0
+      
+      p2 <- x[(input$con_playerB),]
+      
+      for (i in 1:length(p2)) {
+        if(p2[i] >= pointsB & !is.na(p2[i])) {
+          count = sum(p2>=pointsB, na.rm = TRUE)
+        }
       }
+      b <- count/length(na.omit(p2))
     }
-    b <- count/length(na.omit(p2))
-    paste(signif(b, digits = 4)*100,"%")
+    
+    if(input$format == "PPR (6pt/TD)") {
+      x <- as.matrix(weekly_data[1051:1573,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      pointsB <- input$con_numberB
+      count <- 0
+      
+      p2 <- x[(input$con_playerB),]
+      
+      for (i in 1:length(p2)) {
+        if(p2[i] >= pointsB & !is.na(p2[i])) {
+          count = sum(p2>=pointsB, na.rm = TRUE)
+        }
+      }
+      b <- count/length(na.omit(p2))
+    }
+    
+    if(input$format == "1/2PPR") {
+      x <- as.matrix(weekly_data[1:523,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      pointsB <- input$con_numberB
+      count <- 0
+      
+      p2 <- x[(input$con_playerB),]
+      
+      for (i in 1:length(p2)) {
+        if(p2[i] >= pointsB & !is.na(p2[i])) {
+          count = sum(p2>=pointsB, na.rm = TRUE)
+        }
+      }
+      b <- count/length(na.omit(p2))
+    }
+    
+    if(input$format == "Standard") {
+      x <- as.matrix(weekly_data[526:1048,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      pointsB <- input$con_numberB
+      count <- 0
+      
+      p2 <- x[(input$con_playerB),]
+      
+      for (i in 1:length(p2)) {
+        if(p2[i] >= pointsB & !is.na(p2[i])) {
+          count = sum(p2>=pointsB, na.rm = TRUE)
+        }
+      }
+      b <- count/length(na.omit(p2))
+    }
+    
+    paste(signif(b, digits = 4)*100,"% - (LIGHT GREEN)")
+    
   })
   
   output$con_graphA <- renderPlot({
-    x <- as.matrix(weekly_data)
-    rownames(x) <- weekly_data$Player
-    p1 <- x[(input$con_playerA),]
-    p1 <- as.numeric(p1)
-    hist(p1, main = paste("Histogram of", input$con_playerA), xlab = "Fantasy Points")
+
+    if(input$format == "PPR (4pt/TD)") {
+      x <- as.matrix(weekly_data[1576:2098,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      p1 <- x[(input$con_playerA),]
+      p1 <- as.numeric(p1)
+      p2 <- x[(input$con_playerB),]
+      p2 <- as.numeric(p2)
+    }
+    
+    if(input$format == "PPR (6pt/TD)") {
+      x <- as.matrix(weekly_data[1051:1573,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      p1 <- x[(input$con_playerA),]
+      p1 <- as.numeric(p1)
+      p2 <- x[(input$con_playerB),]
+      p2 <- as.numeric(p2)
+    }
+    
+    if(input$format == "1/2PPR") {
+      x <- as.matrix(weekly_data[1:523,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      p1 <- x[(input$con_playerA),]
+      p1 <- as.numeric(p1)
+      p2 <- x[(input$con_playerB),]
+      p2 <- as.numeric(p2)
+    }
+    
+    if(input$format == "Standard") {
+      x <- as.matrix(weekly_data[526:1048,2:35])
+      y <- weekly_data[1576:2098,1]
+      rownames(x) <- y
+      p1 <- x[(input$con_playerA),]
+      p1 <- as.numeric(p1)
+      p2 <- x[(input$con_playerB),]
+      p2 <- as.numeric(p2)
+    }
+    
+    hist(p1, col = "red", main = paste("Histogram of", input$con_playerA, "&", input$con_playerB), xlab = "Fantasy Points", ylim = c(0,15))
+    hist(p2, col = rgb(0,1,0,0.5), add = TRUE)
   })
-  
-  output$con_graphB <- renderPlot({
-    x <- as.matrix(weekly_data)
-    rownames(x) <- weekly_data$Player
-    p2 <- x[(input$con_playerB),]
-    p2 <- as.numeric(p2)
-    hist(p2, main = paste("Histogram of", input$con_playerB), xlab = "Fantasy Points")
-  })
-  
   
   #Weekly Tab
   output$weekly <- DT::renderDataTable({
@@ -609,7 +760,7 @@ server <- function(input, output) {
     })
     
     weekly
-  }, rownames = FALSE, extensions = 'Buttons' ,options = list(lengthMenu = c(12,24,36,50),
+  }, rownames = FALSE, filter = "top", extensions = 'Buttons' ,options = list(lengthMenu = c(12,24,36,50),
                                                               dom = 'Bfrtip', buttons = 'excel',
                                                               'csv','copy'))
   
@@ -672,7 +823,7 @@ server <- function(input, output) {
       }
     })
     yearly <- yearly[order(yearly$pos),]
-  },  rownames = FALSE, extensions = 'Buttons' ,options = list(lengthMenu = c(12,24,36,50),
+  },  rownames = FALSE, filter = "top", extensions = 'Buttons' ,options = list(lengthMenu = c(12,24,36,50),
                                                                dom = 'Bfrtip', buttons = c('excel',
                                                                'csv','copy')))
   
@@ -721,7 +872,7 @@ server <- function(input, output) {
       
     team_defense  
     
-    },rownames = FALSE, extensions = 'Buttons', options = list(dom = 'Bfrtip', 
+    },rownames = FALSE, filter = "top", extensions = 'Buttons', options = list(dom = 'Bfrtip', 
                                                                buttons = c('excel','csv','copy'),
                                                                pageLength = 20))
   })
@@ -747,7 +898,7 @@ server <- function(input, output) {
       
     avg_defense 
       
-    },rownames = FALSE, extensions = 'Buttons', options = list(dom = 'Bfrtip',
+    },rownames = FALSE, filter = "top", extensions = 'Buttons', options = list(dom = 'Bfrtip',
                                                                buttons = c('excel','csv','copy'),
                                                                pageLength = 35))
   })
