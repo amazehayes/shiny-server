@@ -258,7 +258,7 @@ ui <- dashboardPage(
              menuSubItem("Quarterback", tabName = "data_qb"),
              menuSubItem("Running Back", tabName = "data_rb"),
              menuSubItem("Wide Receiver", tabName = "data_wr"),
-             menuSubItem("Tight End", tabName = "data_te")),
+             menuSubItem("Tight End", tabName = "data_te"))
     )
   ),
   
