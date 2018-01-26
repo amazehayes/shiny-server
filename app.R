@@ -308,8 +308,6 @@ ui <- dashboardPage(
             br(),
             br(),
             ("Enjoy!"),
-            br(),
-            br(),
             div(img(src = 'logo.png', height=200,width=200), style="text-align: right;")
             
             ),
