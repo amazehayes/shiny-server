@@ -258,15 +258,15 @@ ui <- dashboardPage(
              menuSubItem("Quarterback", tabName = "data_qb"),
              menuSubItem("Running Back", tabName = "data_rb"),
              menuSubItem("Wide Receiver", tabName = "data_wr"),
-             menuSubItem("Tight End", tabName = "data_te"))
+             menuSubItem("Tight End", tabName = "data_te")),
     )
   ),
   
   dashboardBody(
     tabItems(
     tabItem(tabName = "welcome",
-            h1("Welcome!"),  
-            "Welcome to Fantasy Stats! This website aims to be your one-stop-shop for fantasy football data and statistics! Each tab contains different, sortable data for your fantasy football data needs. If you use the data, all we ask is you mention where you got it, from us!",
+            h1("Welcome!"),
+            "Welcome to FF Statistics! This website aims to be your one-stop-shop for fantasy football data and statistics! Each tab contains different, sortable data for your fantasy football data needs. If you use the data, all we ask is you mention where you got it, from us!",
             br(),
             br(),
             strong("Start/Sit Tool"),
@@ -304,7 +304,10 @@ ui <- dashboardPage(
             "We are always looking to improve the site! If you notice any bugs or errors, or want to see other stats and data, message Addison Hayes (@amazehayes_roto) on Twitter or email ajh5737@gmail.com with suggestions, comments, or questions!",
             br(),
             br(),
-            "Enjoy!"
+            "Enjoy!",
+            br(),
+            br(),
+            div(img(src = 'logo.png', height=200,width=200), style="text-align: right;")
             
             ),
     
