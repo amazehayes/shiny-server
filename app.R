@@ -304,10 +304,7 @@ ui <- dashboardPage(
             "We are always looking to improve the site! If you notice any bugs or errors, or want to see other stats and data, message Addison Hayes (@amazehayes_roto) on Twitter or email ajh5737@gmail.com with suggestions, comments, or questions!",
             br(),
             br(),
-            "Enjoy!",
-            br(),
-            br(),
-            div(img(src = 'logo.png', height=200,width=200), style="text-align: right;")
+            "Enjoy!"
             
             ),
     
