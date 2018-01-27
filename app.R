@@ -56,6 +56,20 @@ total_weekly_rank <- setNames(total_weekly_rank, c("year","posrank","player","po
                                                    "14","15","16","17","#1-12","#13-24",
                                                    "#25-36","#rest"))
 
+offyear <- read.csv("offyearly.csv")
+offyear <- setNames(offyear, c("Pos","Year","Player","Games","PassAtt","PassComp","Comp%","PassYards",
+                               "PassTDs","INTs","RushAtt","RushYards","YPC","RushTDs","Targets",
+                               "Receptions","Reception%","RecYards","RecTDs","FP"))
+offyearqb <- offyear[1:1166,c(2:12,14,20)]
+offyearrb <- offyear[1167:3775,c(2:4,11:19,20)]
+offyearwr <- offyear[3776:6819,c(2:4,15:19,20)]
+offyearte <- offyear[6820:8597,c(2:4,15:19,20)]
+
+offyearqb2 <- offyear[1:1166,c(2:12,14)]
+offyearrb2 <- offyear[1167:3775,c(2:4,11:19)]
+offyearwr2 <- offyear[3776:6819,c(2:4,15:19)]
+offyearte2 <- offyear[6820:8597,c(2:4,15:19)]
+
 yearly <- read.csv("Yearly Data.csv")
 
 yearly_rank <- yearly[,1:17]
@@ -258,7 +272,8 @@ ui <- dashboardPage(
              menuSubItem("Quarterback", tabName = "data_qb"),
              menuSubItem("Running Back", tabName = "data_rb"),
              menuSubItem("Wide Receiver", tabName = "data_wr"),
-             menuSubItem("Tight End", tabName = "data_te"))
+             menuSubItem("Tight End", tabName = "data_te")),
+    menuItem("Custom Fantasy Charts", tabName = "custom", icon = icon("wrench"))
     )
   ),
   
@@ -270,7 +285,7 @@ ui <- dashboardPage(
             br(),
             br(),
             strong("Start/Sit Tool"),
-              ("– Compares two players based on percentage each player hits X amount of points (over the last two seasons), with graphs!"),
+              ("– Compares two players based on percentage each player hits X amount of points, with graphs!"),
             br(),
             br(),
             strong("Consistency Data"),
@@ -479,9 +494,33 @@ ui <- dashboardPage(
                               "FPfromRecYards","FPfromTDs","PPRMachine","YardMonster","TDdepend")
                 ),multiple = TRUE,selected = c("Year","Player","Team","Games","Targets","Receptions",
                                                "Reception%","RecYards","RecTDs")))),
-              fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("tedata"))))
+              fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("tedata")))),
     
-    
+    tabItem(tabName = "custom",
+            fluidRow(
+              column(4, selectInput("offyear_pos","Select Position:",
+                                    c(unique(as.character(offyear$Pos)))))),
+            fluidRow(
+             column(2, numericInput("off_numberA", "Points Per Pass Attempt:",
+                                     value = 0, min = 0, max = 1, step = 0.01)),
+             column(2, numericInput("off_numberB", "Points Per Pass Compl:",
+                                    value = 0, min = 0, max = 1, step = 0.01)),
+             column(2, numericInput("off_numberC", "Points Per Pass Yard:",
+                                    value = 0.04, min = 0, max = 1, step = 0.01)),
+             column(2, numericInput("off_numberD", "Points Per Pass TD:",
+                                    value = 4, min = 0, max = 10, step = 1)),
+             column(2, numericInput("off_numberE", "Points Per Interception:",
+                                    value = -2, min = -5, max = 5, step = 1))),
+            fluidRow(
+             column(2, numericInput("off_numberF", "Points Per Carry:",
+                                     value = 0, min = 0, max = 1, step = 0.01)),
+             column(2, numericInput("off_numberG", "Points Per Reception:",
+                                    value = 1, min = 0, max = 5, step = 0.1)),
+             column(2, numericInput("off_numberH", "Points Per Rush/Rec Yard:",
+                                    value = 0.1, min = 0, max = 5, step = 0.1)),
+             column(2, numericInput("off_numberI", "Points Per Rush/Rec TD:",
+                                    value = 6, min = 0, max = 10, step = 1))),
+            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("offyearly")))
     )
 )
 )
@@ -967,10 +1006,73 @@ server <- function(input, output) {
     
   })
 
-  
+  output$offyearly <- DT::renderDataTable({
+    
+    fanptsqb <- offyearqb$FP + (offyearqb$PassAtt*input$off_numberA) + (offyearqb$PassComp*input$off_numberB) +
+      ((offyearqb$PassYards*input$off_numberC)-(offyearqb$PassYards/25)) +
+      ((offyearqb$PassTDs*input$off_numberD)-(offyearqb$PassTDs*4)) -
+      ((offyearqb$INTs*input$off_numberE)+(offyearqb$INTs*2)) +
+      (offyearqb$RushAtt*input$off_numberF) + ((offyearqb$RushYards*input$off_numberH)-(offyearqb$RushYards*0.1)) +
+      ((offyearqb$RushTDs*input$off_numberI)-(offyearqb$RushTDs*6))
+    avgqb <- round(fanptsqb/offyearqb$Games,2)
+    
+    fanptsrb <- offyearrb$FP + (offyearrb$RushAtt*input$off_numberF) + 
+      ((offyearrb$RushYards*input$off_numberH)-(offyearrb$RushYards*0.1)) +
+      ((offyearrb$RushTDs*input$off_numberI)-(offyearrb$RushTDs*6)) +
+      ((offyearrb$Receptions*input$off_numberG)-offyearrb$Receptions) +
+      ((offyearrb$RecYards*input$off_numberH)-(offyearrb$RecYards*0.1)) +
+      ((offyearrb$RecTDs*input$off_numberI)-(offyearrb$RecTDs*6))
+    avgrb <- round(fanptsrb/offyearrb$Games,2)
+    
+    fanptswr <- offyearwr$FP + 
+      ((offyearwr$Receptions*input$off_numberG)-offyearwr$Receptions) +
+      ((offyearwr$RecYards*input$off_numberH)-(offyearwr$RecYards*0.1)) +
+      ((offyearwr$RecTDs*input$off_numberI)-(offyearwr$RecTDs*6))
+    avgwr <- round(fanptswr/offyearwr$Games,2)
+    
+    fanptste <- offyearte$FP + 
+      ((offyearte$Receptions*input$off_numberG)-offyearte$Receptions) +
+      ((offyearte$RecYards*input$off_numberH)-(offyearte$RecYards*0.1)) +
+      ((offyearte$RecTDs*input$off_numberI)-(offyearte$RecTDs*6))
+    avgte <- round(fanptste/offyearte$Games,2)
+    
+    
+    DT::datatable({
+      
+      if(input$offyear_pos == "QB") {
+        offyearly <- cbind(offyearqb2, fanptsqb, avgqb)
+        offyearly <- setNames(offyearly, c("Year","Player","Games","PassAtt","PassComp","Comp%","PassYards",
+                                       "PassTDs","INTs","RushAtt","RushYards","RushTDs","FanPts","Avg"))
+      }
+      
+      if(input$offyear_pos == "RB") {
+        offyearly <- cbind(offyearrb2, fanptsrb, avgrb)
+        offyearly <- setNames(offyearly, c("Year","Player","Games","RushAtt","RushYards","YPC","RushTDs","Targets",
+                                           "Receptions","Reception%","RecYards","RecTDs","FanPts","Avg"))
+      }
+      
+      if(input$offyear_pos == "WR") {
+        offyearly <- cbind(offyearwr2, fanptswr, avgwr)
+        offyearly <- setNames(offyearly, c("Year","Player","Games","Targets","Receptions",
+                                           "Reception%","RecYards","RecTDs","FanPts","Avg"))
+      }
+      
+      if(input$offyear_pos == "TE") {
+        offyearly <- cbind(offyearte2, fanptste, avgte)
+        offyearly <- setNames(offyearly, c("Year","Player","Games","Targets","Receptions",
+                                           "Reception%","RecYards","RecTDs","FanPts","Avg"))
+      }
+
+    offyearly[order(c(-offyearly$Year,-offyearly$FanPts)), ]
+      
+    }, rownames = FALSE,filter = "top", extensions = 'Buttons',
+    options = list(lengthMenu = c(12,24,36,50,100), dom = 'Bfrtip', buttons = c('excel','csv','copy'))
+    
+    )
+    
+  })
   
 }
 
 # Run the application 
 shinyApp(ui = ui, server = server)
-
