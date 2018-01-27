@@ -595,7 +595,7 @@ server <- function(input, output) {
       a <- count/length(na.omit(p1))
     }
     
-    paste(signif(a, digits = 4)*100,"% - (RED)")
+    paste(signif(a, digits = 4)*100,"%")
     
   })
   
@@ -669,7 +669,7 @@ server <- function(input, output) {
       b <- count/length(na.omit(p2))
     }
     
-    paste(signif(b, digits = 4)*100,"% - (LIGHT GREEN)")
+    paste(signif(b, digits = 4)*100,"%")
     
   })
   
@@ -715,8 +715,9 @@ server <- function(input, output) {
       p2 <- as.numeric(p2)
     }
     
-    hist(p1, col = "red", main = paste("Histogram of", input$con_playerA, "&", input$con_playerB), xlab = "Fantasy Points", ylim = c(0,15))
+    hist(p1, col = "red", main = paste("Histogram of", input$con_playerA, "&", input$con_playerB), xlab = "Fantasy Points", ylim = c(0,20))
     hist(p2, col = rgb(0,1,0,0.5), add = TRUE)
+    legend("topright",c(input$con_playerA,input$con_playerB),col = c("red",rgb(0,1,0,0.5)), lwd = 8)
   })
   
   #Weekly Tab
