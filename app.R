@@ -254,7 +254,8 @@ tedata <- setNames(tedata,c("Year","Player","Age","Season","Round","Overall",
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
   
-  dashboardHeader(title = "FF Statistics", tags$li(a(img(src = 'logo.png',height = "30px"),
+  dashboardHeader(title = "FF Statistics",
+                  tags$li(a(img(src = 'logo.png',height = "30px"),
                             style = "padding-top:10px; padding-bottom:10px;"),
                           class = "dropdown")),
   
@@ -562,8 +563,7 @@ server <- function(input, output) {
     
     consistency
     
-  }, rownames = FALSE, filter = "top", extensions = 'Buttons',options = list(lengthMenu = c(12,24,36,50),dom = 'Bfrtip', buttons = c('excel',
-                                                                                              'csv','copy')))
+  }, rownames = FALSE, filter = "top",options = list(lengthMenu = c(12,24,36,50)))
   
   #Print Start/Sit Tool
   output$probA <- renderText({
@@ -806,9 +806,7 @@ server <- function(input, output) {
     })
     
     weekly
-  }, rownames = FALSE, filter = "top", extensions = 'Buttons' ,options = list(lengthMenu = c(12,24,36,50),
-                                                              dom = 'Bfrtip', buttons = 'excel',
-                                                              'csv','copy'))
+  }, rownames = FALSE, filter = "top",options = list(lengthMenu = c(12,24,36,50)))
   
   #Yearly Data
   output$yearly <- DT::renderDataTable({
@@ -869,9 +867,7 @@ server <- function(input, output) {
       }
     })
     yearly <- yearly[order(yearly$pos),]
-  },  rownames = FALSE, filter = "top", extensions = 'Buttons' ,options = list(lengthMenu = c(12,24,36,50),
-                                                               dom = 'Bfrtip', buttons = c('excel',
-                                                               'csv','copy')))
+  },  rownames = FALSE, filter = "top",options = list(lengthMenu = c(12,24,36,50)))
   
   #Yearly Graph
   output$yearly_graph <- renderPlot({
@@ -918,9 +914,7 @@ server <- function(input, output) {
       
     team_defense  
     
-    },rownames = FALSE, filter = "top", extensions = 'Buttons', options = list(dom = 'Bfrtip', 
-                                                               buttons = c('excel','csv','copy'),
-                                                               pageLength = 20))
+    },rownames = FALSE, filter = "top", options = list(pageLength = 20))
   })
   
   output$avg_defense <- DT::renderDataTable({
@@ -944,9 +938,7 @@ server <- function(input, output) {
       
     avg_defense 
       
-    },rownames = FALSE, filter = "top", extensions = 'Buttons', options = list(dom = 'Bfrtip',
-                                                               buttons = c('excel','csv','copy'),
-                                                               pageLength = 35))
+    },rownames = FALSE, filter = "top", options = list(pageLength = 35))
   })
   
   
@@ -957,9 +949,8 @@ server <- function(input, output) {
       if(!is.null(input$qb_vars)) {
         qbdata[,input$qb_vars, drop = FALSE]
       }
-      , rownames = FALSE, filter = "top" , extensions = 'Buttons', 
-      options = list(lengthMenu = c(10,25,50,100), dom = 'Bfrtip', buttons = c('excel',
-                                                                             'csv','copy'))
+      , rownames = FALSE, filter = "top", 
+      options = list(lengthMenu = c(10,25,50,100))
 
     )
   })
@@ -971,9 +962,8 @@ server <- function(input, output) {
       if(!is.null(input$rb_vars)) {
         rbdata[,input$rb_vars, drop = FALSE]
       }
-      , rownames = FALSE,filter = "top", extensions = 'Buttons',
-      options = list(lengthMenu = c(10,25,50,100), dom = 'Bfrtip', buttons = c('excel',
-                                                                             'csv','copy'))
+      , rownames = FALSE,filter = "top",
+      options = list(lengthMenu = c(10,25,50,100))
       
     )
   })
@@ -985,9 +975,8 @@ server <- function(input, output) {
       if(!is.null(input$wr_vars)) {
         wrdata[,input$wr_vars, drop = FALSE]
       }
-      , rownames = FALSE,filter = "top", extensions = 'Buttons',
-      options = list(lengthMenu = c(10,25,50,100), dom = 'Bfrtip', buttons = c('excel',
-                                                                               'csv','copy'))
+      , rownames = FALSE,filter = "top",
+      options = list(lengthMenu = c(10,25,50,100))
       
     ) 
     
@@ -1000,9 +989,8 @@ server <- function(input, output) {
       if(!is.null(input$te_vars)) {
         tedata[,input$te_vars, drop = FALSE]
       }
-      , rownames = FALSE,filter = "top", extensions = 'Buttons',
-      options = list(lengthMenu = c(10,25,50,100), dom = 'Bfrtip', buttons = c('excel',
-                                                                               'csv','copy'))
+      , rownames = FALSE,filter = "top",
+      options = list(lengthMenu = c(10,25,50,100))
       
     ) 
     
@@ -1067,8 +1055,8 @@ server <- function(input, output) {
 
     offyearly[order(c(-offyearly$Year,-offyearly$FanPts)), ]
       
-    }, rownames = FALSE,filter = "top", extensions = 'Buttons',
-    options = list(lengthMenu = c(12,24,36,50,100), dom = 'Bfrtip', buttons = c('excel','csv','copy'))
+    }, rownames = FALSE,filter = "top",
+    options = list(lengthMenu = c(12,24,36,50,100))
     
     )
     
@@ -1078,3 +1066,4 @@ server <- function(input, output) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
