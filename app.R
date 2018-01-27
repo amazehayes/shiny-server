@@ -270,7 +270,7 @@ ui <- dashboardPage(
             br(),
             br(),
             strong("Start/Sit Tool"),
-              ("– Compares two players based on percentage each player hits X amount of points, with graphs!"),
+              ("– Compares two players based on percentage each player hits X amount of points (over the last two seasons, with graphs!"),
             br(),
             br(),
             strong("Consistency Data"),
