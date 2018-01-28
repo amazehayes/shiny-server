@@ -70,7 +70,7 @@ offyearrb2 <- offyear[1167:3775,c(2:5,12:20)]
 offyearwr2 <- offyear[3776:6819,c(2:5,16:20)]
 offyearte2 <- offyear[6820:8597,c(2:5,16:20)]
 
-idpyear <- read.csv("idp_yearly.csv")
+idpyear <- read.csv("idpyearly.csv")
 idpyear <- setNames(idpyear, c("Pos","Year","Player","Team","Games","Tackles","Assists",
                                "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
                                "TDs","FP","FP/G","PosRank"))
