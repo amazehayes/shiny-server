@@ -57,18 +57,30 @@ total_weekly_rank <- setNames(total_weekly_rank, c("year","posrank","player","po
                                                    "#25-36","#rest"))
 
 offyear <- read.csv("offyearly.csv")
-offyear <- setNames(offyear, c("Pos","Year","Player","Games","PassAtt","PassComp","Comp%","PassYards",
+offyear <- setNames(offyear, c("Pos","Year","Player","Team","Games","PassAtt","PassComp","Comp%","PassYards",
                                "PassTDs","INTs","RushAtt","RushYards","YPC","RushTDs","Targets",
                                "Receptions","Reception%","RecYards","RecTDs","FP"))
-offyearqb <- offyear[1:1166,c(2:12,14,20)]
-offyearrb <- offyear[1167:3775,c(2:4,11:19,20)]
-offyearwr <- offyear[3776:6819,c(2:4,15:19,20)]
-offyearte <- offyear[6820:8597,c(2:4,15:19,20)]
+offyearqb <- offyear[1:1166,c(2:13,15,21)]
+offyearrb <- offyear[1167:3775,c(2:5,12:20,21)]
+offyearwr <- offyear[3776:6819,c(2:5,16:20,21)]
+offyearte <- offyear[6820:8597,c(2:5,16:20,21)]
 
-offyearqb2 <- offyear[1:1166,c(2:12,14)]
-offyearrb2 <- offyear[1167:3775,c(2:4,11:19)]
-offyearwr2 <- offyear[3776:6819,c(2:4,15:19)]
-offyearte2 <- offyear[6820:8597,c(2:4,15:19)]
+offyearqb2 <- offyear[1:1166,c(2:13,15)]
+offyearrb2 <- offyear[1167:3775,c(2:5,12:20)]
+offyearwr2 <- offyear[3776:6819,c(2:5,16:20)]
+offyearte2 <- offyear[6820:8597,c(2:5,16:20)]
+
+idpyear <- read.csv("idp_yearly.csv")
+idpyear <- setNames(idpyear, c("Pos","Year","Player","Team","Games","Tackles","Assists",
+                               "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
+                               "TDs","FP","FP/G","PosRank"))
+idpyeardl <- idpyear[2842:5047,2:15]
+idpyearlb <- idpyear[5048:7198,2:15]
+idpyeardb <- idpyear[1:2841,2:15]
+
+idpyeardl2 <- idpyear[2842:5047,2:14]
+idpyearlb2 <- idpyear[5048:7198,2:14]
+idpyeardb2 <- idpyear[1:2841,2:14]
 
 yearly <- read.csv("Yearly Data.csv")
 
@@ -276,7 +288,9 @@ ui <- dashboardPage(
              menuSubItem("Running Back", tabName = "data_rb"),
              menuSubItem("Wide Receiver", tabName = "data_wr"),
              menuSubItem("Tight End", tabName = "data_te")),
-    menuItem("Custom Fantasy Charts", tabName = "custom", icon = icon("wrench"))
+    menuItem("Custom Fantasy Charts", tabName = "custom", icon = icon("wrench"),
+             menuSubItem("Offense", tabName = "customoff"),
+             menuSubItem("Defense", tabName = "customdef"))
     )
   ),
   
@@ -320,7 +334,7 @@ ui <- dashboardPage(
             br(),
             br(),
             strong("Custom Fantasy Charts"),
-              ("- A 100% customizable datatable for any fantasy scoring format!"),
+              ("- A 100% customizable datatable for any fantasy scoring format for both offense and defense!"),
             br(),
             br(),
             ("We are always looking to improve the site! If you notice any bugs or errors, or want to see other stats and data, message Addison Hayes (@amazehayes_roto) on Twitter or email ajh5737@gmail.com with suggestions, comments, or questions!"),
@@ -503,7 +517,7 @@ ui <- dashboardPage(
                                                "Reception%","RecYards","RecTDs")))),
               fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("tedata")))),
     
-    tabItem(tabName = "custom",
+    tabItem(tabName = "customoff",
             fluidRow(
               column(4, selectInput("offyear_pos","Select Position:",
                                     c(unique(as.character(offyear$Pos)))))),
@@ -523,11 +537,39 @@ ui <- dashboardPage(
                                      value = 0, min = 0, max = 1, step = 0.01)),
              column(2, numericInput("off_numberG", "Points Per Reception:",
                                     value = 1, min = 0, max = 5, step = 0.1)),
+             column(2, numericInput("off_numberJ", "TE PPR Premium:",
+                                    value = 1, min = 0, max = 5, step = 0.1)),
              column(2, numericInput("off_numberH", "Points Per Rush/Rec Yard:",
                                     value = 0.1, min = 0, max = 5, step = 0.1)),
              column(2, numericInput("off_numberI", "Points Per Rush/Rec TD:",
                                     value = 6, min = 0, max = 10, step = 1))),
-            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("offyearly")))
+            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("offyearly"))),
+    
+    tabItem(tabName = "customdef",
+            fluidRow(
+              column(4, selectInput("defyear_pos","Select Position:",
+                                    c(unique(as.character(idpyear$Pos)))))),
+            fluidRow(
+              column(2, numericInput("def_numberA", "Points Per Tackle:",
+                                     value = 1, min = 0, max = 10, step = 0.1)),
+              column(2, numericInput("def_numberB", "Points Per Assist:",
+                                     value = 0.5, min = 0, max = 10, step = 0.1)),
+              column(2, numericInput("def_numberC", "Points Per Sack:",
+                                     value = 4, min = 0, max = 20, step = 0.1)),
+              column(2, numericInput("def_numberD", "Points Per Pass Defensed:",
+                                     value = 1, min = 0, max = 10, step = 0.1)),
+              column(2, numericInput("def_numberE", "Points Per Interception:",
+                                     value = 5, min = 0, max = 20, step = 0.1))),
+            fluidRow(
+              column(2, numericInput("def_numberF", "Points Per Forced Fumble:",
+                                     value = 3, min = 0, max = 20, step = 0.1)),
+              column(2, numericInput("def_numberG", "Points Per Fumble Rec.:",
+                                     value = 2, min = 0, max = 20, step = 0.1)),
+              column(2, numericInput("def_numberH", "Points Per Safety:",
+                                     value = 2, min = 0, max = 10, step = 0.1)),
+              column(2, numericInput("def_numberI", "Points Per TD:",
+                                     value = 6, min = 0, max = 20, step = 0.1))),
+            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("defyearly")))
     )
 )
 )
@@ -1025,7 +1067,7 @@ server <- function(input, output) {
     avgwr <- round(fanptswr/offyearwr$Games,2)
     
     fanptste <- offyearte$FP + 
-      ((offyearte$Receptions*input$off_numberG)-offyearte$Receptions) +
+      ((offyearte$Receptions*input$off_numberJ)-offyearte$Receptions) +
       ((offyearte$RecYards*input$off_numberH)-(offyearte$RecYards*0.1)) +
       ((offyearte$RecTDs*input$off_numberI)-(offyearte$RecTDs*6))
     avgte <- round(fanptste/offyearte$Games,2)
@@ -1060,10 +1102,73 @@ server <- function(input, output) {
     offyearly[order(c(-offyearly$Year,-offyearly$FanPts)), ]
       
     }, rownames = FALSE,filter = "top",
-    options = list(lengthMenu = c(12,24,36,50,100))
+    options = list(lengthMenu = c(12,24,36,50,100)))
     
-    )
+  })
+  
+  output$defyearly <- renderDataTable({
     
+    fanptsdl <- idpyeardl$FP + ((idpyeardl$Tackle*input$def_numberA)-idpyeardl$Tackle) +
+      ((idpyeardl$Assists*input$def_numberB)-(idpyeardl$Assists*0.5)) +
+      ((idpyeardl$Sacks*input$def_numberC)-(idpyeardl$Sacks*4)) +
+      ((idpyeardl$PassDef*input$def_numberD)-idpyeardl$PassDef) +
+      ((idpyeardl$INTs*input$def_numberE)-(idpyeardl$INTs*5)) +
+      ((idpyeardl$FumbleForced*input$def_numberF)-(idpyeardl$FumbleForced*3)) +
+      ((idpyeardl$FumbleRec*input$def_numberG)-(idpyeardl$FumbleRec*2)) +
+      ((idpyeardl$Safeties*input$def_numberH)-(idpyeardl$Safeties*2)) +
+      ((idpyeardl$TDs*input$def_numberI)-(idpyeardl$TDs*6))
+    avgdl <- round(fanptsdl/idpyeardl$Games,2)
+    
+    fanptsdb <- idpyeardb$FP + ((idpyeardb$Tackle*input$def_numberA)-idpyeardb$Tackle) +
+      ((idpyeardb$Assists*input$def_numberB)-(idpyeardb$Assists*0.5)) +
+      ((idpyeardb$Sacks*input$def_numberC)-(idpyeardb$Sacks*4)) +
+      ((idpyeardb$PassDef*input$def_numberD)-idpyeardb$PassDef) +
+      ((idpyeardb$INTs*input$def_numberE)-(idpyeardb$INTs*5)) +
+      ((idpyeardb$FumbleForced*input$def_numberF)-(idpyeardb$FumbleForced*3)) +
+      ((idpyeardb$FumbleRec*input$def_numberG)-(idpyeardb$FumbleRec*2)) +
+      ((idpyeardb$Safeties*input$def_numberH)-(idpyeardb$Safeties*2)) +
+      ((idpyeardb$TDs*input$def_numberI)-(idpyeardb$TDs*6))
+    avgdb <- round(fanptsdb/idpyeardb$Games,2)
+    
+    fanptslb <- idpyearlb$FP + ((idpyearlb$Tackle*input$def_numberA)-idpyearlb$Tackle) +
+      ((idpyearlb$Assists*input$def_numberB)-(idpyearlb$Assists*0.5)) +
+      ((idpyearlb$Sacks*input$def_numberC)-(idpyearlb$Sacks*4)) +
+      ((idpyearlb$PassDef*input$def_numberD)-idpyearlb$PassDef) +
+      ((idpyearlb$INTs*input$def_numberE)-(idpyearlb$INTs*5)) +
+      ((idpyearlb$FumbleForced*input$def_numberF)-(idpyearlb$FumbleForced*3)) +
+      ((idpyearlb$FumbleRec*input$def_numberG)-(idpyearlb$FumbleRec*2)) +
+      ((idpyearlb$Safeties*input$def_numberH)-(idpyearlb$Safeties*2)) +
+      ((idpyearlb$TDs*input$def_numberI)-(idpyearlb$TDs*6))
+    avglb <- round(fanptslb/idpyearlb$Games,2)
+    
+    DT::datatable({
+      
+      if(input$defyear_pos == "DL") {
+        defyearly <- cbind(idpyeardl2,fanptsdl,avgdl)
+        defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
+                                           "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
+                                           "TDs","FanPts","Avg"))
+      }
+      
+      if(input$defyear_pos == "DB") {
+        defyearly <- cbind(idpyeardb2,fanptsdb,avgdb)
+        defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
+                                           "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
+                                           "TDs","FanPts","Avg"))
+      }
+      
+      if(input$defyear_pos == "LB") {
+        defyearly <- cbind(idpyearlb2,fanptslb,avglb)
+        defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
+                                           "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
+                                           "TDs","FanPts","Avg"))
+      }
+      
+    defyearly
+    
+    }, rownames = FALSE,filter = "top",
+    options = list(lengthMenu = c(12,24,36,50,100)))
+
   })
   
 }
