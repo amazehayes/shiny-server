@@ -533,33 +533,9 @@ ui <- dashboardPage(
                                     value = 0.1, min = 0, max = 5, step = 0.1)),
              column(2, numericInput("off_numberI", "Points Per Rush/Rec TD:",
                                     value = 6, min = 0, max = 10, step = 1))),
-            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("offyearly"))),
+            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("offyearly")))
     
-    tabItem(tabName = "customdef",
-            fluidRow(
-              column(4, selectInput("defyear_pos","Select Position:",
-                                    c(unique(as.character(idpyear$Pos)))))),
-            fluidRow(
-              column(2, numericInput("def_numberA", "Points Per Tackle:",
-                                     value = 1, min = 0, max = 10, step = 0.1)),
-              column(2, numericInput("def_numberB", "Points Per Assist:",
-                                     value = 0.5, min = 0, max = 10, step = 0.1)),
-              column(2, numericInput("def_numberC", "Points Per Sack:",
-                                     value = 4, min = 0, max = 20, step = 0.1)),
-              column(2, numericInput("def_numberD", "Points Per Pass Defensed:",
-                                     value = 1, min = 0, max = 10, step = 0.1)),
-              column(2, numericInput("def_numberE", "Points Per Interception:",
-                                     value = 5, min = 0, max = 20, step = 0.1))),
-            fluidRow(
-              column(2, numericInput("def_numberF", "Points Per Forced Fumble:",
-                                     value = 3, min = 0, max = 20, step = 0.1)),
-              column(2, numericInput("def_numberG", "Points Per Fumble Rec.:",
-                                     value = 2, min = 0, max = 20, step = 0.1)),
-              column(2, numericInput("def_numberH", "Points Per Safety:",
-                                     value = 2, min = 0, max = 10, step = 0.1)),
-              column(2, numericInput("def_numberI", "Points Per TD:",
-                                     value = 6, min = 0, max = 20, step = 0.1))),
-            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("defyearly")))
+
     )
 )
 )
