@@ -1,7 +1,6 @@
 library(shiny)
 library(shinydashboard)
 library(DT)
-library(rsconnect)
 
 defenses <- read.csv("defenses.csv")
 defenses_avg <- read.csv("defenses_avg.csv")
