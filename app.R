@@ -1106,70 +1106,7 @@ server <- function(input, output) {
     
   })
   
-  output$defyearly <- renderDataTable({
-    
-    fanptsdl <- idpyeardl$FP + ((idpyeardl$Tackle*input$def_numberA)-idpyeardl$Tackle) +
-      ((idpyeardl$Assists*input$def_numberB)-(idpyeardl$Assists*0.5)) +
-      ((idpyeardl$Sacks*input$def_numberC)-(idpyeardl$Sacks*4)) +
-      ((idpyeardl$PassDef*input$def_numberD)-idpyeardl$PassDef) +
-      ((idpyeardl$INTs*input$def_numberE)-(idpyeardl$INTs*5)) +
-      ((idpyeardl$FumbleForced*input$def_numberF)-(idpyeardl$FumbleForced*3)) +
-      ((idpyeardl$FumbleRec*input$def_numberG)-(idpyeardl$FumbleRec*2)) +
-      ((idpyeardl$Safeties*input$def_numberH)-(idpyeardl$Safeties*2)) +
-      ((idpyeardl$TDs*input$def_numberI)-(idpyeardl$TDs*6))
-    avgdl <- round(fanptsdl/idpyeardl$Games,2)
-    
-    fanptsdb <- idpyeardb$FP + ((idpyeardb$Tackle*input$def_numberA)-idpyeardb$Tackle) +
-      ((idpyeardb$Assists*input$def_numberB)-(idpyeardb$Assists*0.5)) +
-      ((idpyeardb$Sacks*input$def_numberC)-(idpyeardb$Sacks*4)) +
-      ((idpyeardb$PassDef*input$def_numberD)-idpyeardb$PassDef) +
-      ((idpyeardb$INTs*input$def_numberE)-(idpyeardb$INTs*5)) +
-      ((idpyeardb$FumbleForced*input$def_numberF)-(idpyeardb$FumbleForced*3)) +
-      ((idpyeardb$FumbleRec*input$def_numberG)-(idpyeardb$FumbleRec*2)) +
-      ((idpyeardb$Safeties*input$def_numberH)-(idpyeardb$Safeties*2)) +
-      ((idpyeardb$TDs*input$def_numberI)-(idpyeardb$TDs*6))
-    avgdb <- round(fanptsdb/idpyeardb$Games,2)
-    
-    fanptslb <- idpyearlb$FP + ((idpyearlb$Tackle*input$def_numberA)-idpyearlb$Tackle) +
-      ((idpyearlb$Assists*input$def_numberB)-(idpyearlb$Assists*0.5)) +
-      ((idpyearlb$Sacks*input$def_numberC)-(idpyearlb$Sacks*4)) +
-      ((idpyearlb$PassDef*input$def_numberD)-idpyearlb$PassDef) +
-      ((idpyearlb$INTs*input$def_numberE)-(idpyearlb$INTs*5)) +
-      ((idpyearlb$FumbleForced*input$def_numberF)-(idpyearlb$FumbleForced*3)) +
-      ((idpyearlb$FumbleRec*input$def_numberG)-(idpyearlb$FumbleRec*2)) +
-      ((idpyearlb$Safeties*input$def_numberH)-(idpyearlb$Safeties*2)) +
-      ((idpyearlb$TDs*input$def_numberI)-(idpyearlb$TDs*6))
-    avglb <- round(fanptslb/idpyearlb$Games,2)
-    
-    DT::datatable({
-      
-      if(input$defyear_pos == "DL") {
-        defyearly <- cbind(idpyeardl2,fanptsdl,avgdl)
-        defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
-                                           "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
-                                           "TDs","FanPts","Avg"))
-      }
-      
-      if(input$defyear_pos == "DB") {
-        defyearly <- cbind(idpyeardb2,fanptsdb,avgdb)
-        defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
-                                           "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
-                                           "TDs","FanPts","Avg"))
-      }
-      
-      if(input$defyear_pos == "LB") {
-        defyearly <- cbind(idpyearlb2,fanptslb,avglb)
-        defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
-                                           "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
-                                           "TDs","FanPts","Avg"))
-      }
-      
-      defyearly[order(c(-defyearly$Year,-defyearly$FanPts)), ]
-    
-    }, rownames = FALSE,filter = "top",
-    options = list(lengthMenu = c(12,24,36,50,100)))
 
-  })
   
 }
 
