@@ -1164,7 +1164,7 @@ server <- function(input, output) {
                                            "TDs","FanPts","Avg"))
       }
       
-    defyearly
+      defyearly[order(c(-defyearly$Year,-defyearly$FanPts)), ]
     
     }, rownames = FALSE,filter = "top",
     options = list(lengthMenu = c(12,24,36,50,100)))
