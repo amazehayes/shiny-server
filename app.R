@@ -291,7 +291,7 @@ ui <- dashboardPage(
     tabItems(
     tabItem(tabName = "welcome",
             h1("Welcome!"),
-            "Welcome to FF Statistics! This website aims to be your one-stop-shop for fantasy football data and statistics! Each tab contains different, sortable data for your fantasy football data needs. If you use the data, all we ask is you mention where you got it, from us!",
+            "Welcome to FF Statistics! This website aims to be your one-stop-shop for fantasy football data and statistics! Each tab contains different, sortable data for your fantasy football data needs. If you use the data, all we ask is you mention where you got it, from us! Unless otherwise noted, all formats are PPR and 4 point per passing TD.",
             br(),
             br(),
             strong("Start/Sit Tool"),
