@@ -1,7 +1,6 @@
 library(shiny)
 library(shinydashboard)
 library(DT)
-library(rsconnect)
 
 finish <- read.csv("total_finishes.csv")
 colnames(finish) <- c("Player","1-12","13-24","25-36","Rest")
