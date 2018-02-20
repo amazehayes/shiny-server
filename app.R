@@ -288,7 +288,7 @@ tedata <- setNames(tedata,c("Year","Player","Age","Season","Round","Overall",
 
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
-  
+
   dashboardHeader(title = "FF Statistics",
                   tags$li(a(img(src = 'logo.png',height = "30px"),
                             style = "padding-top:10px; padding-bottom:10px;"),
@@ -325,6 +325,7 @@ ui <- dashboardPage(
   ),
   
   dashboardBody(
+    tags$head(includeScript("analystics.js")),
     tags$head(tags$style(HTML('
                               .sidebar {
                               color: #FFF;
