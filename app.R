@@ -340,7 +340,7 @@ ui <- dashboardPage(
                               width:100%;
                               }
                               .content {
-                              padding-top: 80px;
+                              padding-top: 70px;
                               }'))),
     tabItems(
     tabItem(tabName = "welcome",
