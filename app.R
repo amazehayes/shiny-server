@@ -67,6 +67,10 @@ consistency <- read.csv("consistencydata.csv")
 consistency <- setNames(consistency, c("year","player","team","pos","posrank","games","total","avg",
                                                  "std.dev","floor","ceiling","CV%","COR","#top12",
                                                  "#13-24","#25-36","#rest"))
+conyear <- read.csv("consistency.csv")
+conyear <- setNames(conyear, c("player","2017","2016","2015","2014","2013","2012",
+                                       "2011","2010","2017","2016","2015","2014","2013","2012",
+                                       "2011","2010"))
 
 weekly_data <- read.csv("Weekly Data.csv")
 
@@ -298,7 +302,9 @@ ui <- dashboardPage(
     sidebarMenu(
     menuItem("Welcome", tabName = "welcome", icon = icon("dashboard")),
     menuItem("Start/Sit Tool", tabName = "tool", icon = icon("wrench")),
-    menuItem("Consistency Data", tabName = "consistency", icon = icon("table")),
+    menuItem("Consistency", tabName = "consistency", icon = icon("table"),
+             menuSubItem("Consistency Data", tabName = "condata"),
+             menuSubItem("Consistency Charts", tabName = "conchart")),
     menuItem("Weekly Data", tabName = "weekly", icon = icon("table"),
              menuSubItem("Weekly Datatable","weeklydata"),
              menuSubItem("Weekly Tool", "weeklytool"),
@@ -340,7 +346,7 @@ ui <- dashboardPage(
                               width:100%;
                               }
                               .content {
-                              padding-top: 80px;
+                              padding-top: 60px;
                               }'))),
     tabItems(
     tabItem(tabName = "welcome",
@@ -354,7 +360,11 @@ ui <- dashboardPage(
             br(),
             br(),
             strong("Consistency Data"),
-              ("- Datatable of each player's consistency stats based on average and standard deviation, and more!"),
+              ("- Two tabs:"),
+            br(),
+              ("1) Datatable of each player's consistency stats based on average and standard deviation, and more!"),
+            br(),
+              ("2) Chart of each  player's average points/game since 2010 with error bars to show their standard deviation."),
             br(),
             br(),
             strong("Weekly Data"),
@@ -416,7 +426,9 @@ ui <- dashboardPage(
             fluidRow(
               column(6, selectInput("format", "Choose Scoring Format:",
                                     c("PPR (4pt/TD)", "1/2PPR","Standard","PPR (6pt/TD)"),
-                                    selected = "PPR (4pt/TD)"))),
+                                    selected = "PPR (4pt/TD)")),
+              column(6, numericInput("con_number", "Select Points Needed (Greater Than):",
+                                     value = 20, min = 0, max = 50, step = 0.1)) ),
             fluidRow(
               column(6, selectInput("con_playerA", "Choose Player A:",
                                            unique(as.character(weekly_data$Player)),
@@ -424,22 +436,18 @@ ui <- dashboardPage(
               column(6, selectInput("con_playerB", "Choose Player B:",
                                                unique(as.character(weekly_data$Player)),
                                                selected = "Drew Brees"))),
-            fluidRow(column(6, numericInput("con_numberA", "Select Points Needed (Greater Than):",
-                                            value = 20, min = 0, max = 50, step = 0.1)),
-                     column(6, numericInput("con_numberB", "Select Points Needed (Greater Than):",
-                                            value = 20, min = 0 , max = 50, step = 0.1))),
             fluidRow(column(6, verbatimTextOutput("probA")),
                      column(6, verbatimTextOutput("probB"))),
             fluidRow(column(6,plotOutput("con_graphA")),
                      column(4,DT::dataTableOutput("con_tableB")))),
       
-    tabItem(tabName = "consistency",
+    tabItem(tabName = "condata",
             fluidRow(
               column(4,selectInput("pos","Position:",c("All",unique(
                 as.character(consistency$pos))))),
               column(4,selectInput("con_year","Select Year:", c("All",unique(
                 as.character(consistency$year)))))),
-            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("consistency")),
+            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("condatatable")),
             br(),
             br(),
             h2("Glossary"),
@@ -473,6 +481,21 @@ ui <- dashboardPage(
              A high COR means that player is consistently performing for fantasy and mostly at a high level.
              A low COR means that player is struggling to find consistency or relevant fantasy production.
              By nature, quarterbacks will have higher CORs than most RBs, WRs, and TEs, while tight ends usually have lower CORs than the other three positions.")
+            ),
+    
+    tabItem(tabName = "conchart",
+            fluidRow(
+              column(4, selectInput("conchart_playerA","Choose Player:",
+                                    c("None",unique(as.character(conyear$player))),
+                                    selected = "Russell Wilson")),
+              column(4, selectInput("conchart_playerB","Choose Player:",
+                                    c("None",unique(as.character(conyear$player))),
+                                    selected = "Cam Newton")),
+              column(4, selectInput("conchart_playerC","Choose Player:",
+                                    c("None",unique(as.character(conyear$player))),
+                                    selected = "None"))),
+            fluidRow(column(10, plotOutput("con_chart"))),
+            fluidRow(column(10, style = "overflow-x: scroll", DT::dataTableOutput("con_dt")))
             ),
     
     tabItem(tabName = "weeklydata",
@@ -744,7 +767,7 @@ server <- function(input, output) {
   })
   
   #Print Consistency Datatable
-  output$consistency <- DT::renderDataTable({
+  output$condatatable <- DT::renderDataTable({
     DT::datatable({
       
       if(input$pos == "All" & input$con_year == "All") {
@@ -772,6 +795,237 @@ server <- function(input, output) {
     
   }, rownames = FALSE, filter = "top",options = list(lengthMenu = c(12,24,36,50)))
   
+  output$con_chart <- renderPlot({
+    
+    if(input$conchart_playerA == "None" & input$conchart_playerB == "None" & input$conchart_playerC == "None"){
+      paste("Please select a player...")
+    }
+    
+    if(input$conchart_playerA != "None" & input$conchart_playerB == "None" & input$conchart_playerC == "None"){
+      conavg <- as.matrix(conyear[,2:9])
+      rownames(conavg) <- conyear$player
+      consd <- as.matrix(conyear[,10:17])
+      rownames(consd) <- conyear$player
+      p1 <- conavg[input$conchart_playerA,]
+      s1 <- consd[input$conchart_playerA,]
+      bar <- barplot(p1, ylim = c(0,35), col = "red", main = paste("Average Points per Game for",input$conchart_playerA),
+                     xlab = "Year", ylab = "Points per Game")
+      segments(bar,p1-s1,bar,p1+s1, lwd = 1)
+      legend("topright",c(input$conchart_playerA),col = c("red"), lwd = 8)
+    }
+    
+    if(input$conchart_playerA == "None" & input$conchart_playerB != "None" & input$conchart_playerC == "None"){
+      conavg <- as.matrix(conyear[,2:9])
+      rownames(conavg) <- conyear$player
+      consd <- as.matrix(conyear[,10:17])
+      rownames(consd) <- conyear$player
+      p1 <- conavg[input$conchart_playerB,]
+      s1 <- consd[input$conchart_playerB,]
+      bar <- barplot(p1, ylim = c(0,35), col = "blue", main = paste("Average Points per Game for",input$conchart_playerB),
+                     xlab = "Year", ylab = "Points per Game")
+      segments(bar,p1-s1,bar,p1+s1, lwd = 1)
+      legend("topright",c(input$conchart_playerB),col = c("blue"), lwd = 8)
+    }
+    
+    if(input$conchart_playerA == "None" & input$conchart_playerB == "None" & input$conchart_playerC != "None"){
+      conavg <- as.matrix(conyear[,2:9])
+      rownames(conavg) <- conyear$player
+      consd <- as.matrix(conyear[,10:17])
+      rownames(consd) <- conyear$player
+      p1 <- conavg[input$conchart_playerC,]
+      s1 <- consd[input$conchart_playerC,]
+      bar <- barplot(p1, ylim = c(0,35), col = rgb(0,1,0,0.5), main = paste("Average Points per Game for",input$conchart_playerC),
+                     xlab = "Year", ylab = "Points per Game")
+      segments(bar,p1-s1,bar,p1+s1, lwd = 1)
+      legend("topright",c(input$conchart_playerC),col = c(rgb(0,1,0,0.5)), lwd = 8)
+    }
+    
+    if(input$conchart_playerA != "None" & input$conchart_playerB != "None" & input$conchart_playerC == "None"){
+      conavg <- as.matrix(conyear[,2:9])
+      rownames(conavg) <- conyear$player
+      consd <- as.matrix(conyear[,10:17])
+      rownames(consd) <- conyear$player
+      p1 <- conavg[input$conchart_playerA,]
+      s1 <- consd[input$conchart_playerA,]
+      p2 <- conavg[input$conchart_playerB,]
+      s2 <- consd[input$conchart_playerB,]
+      test <- rbind(p1,p2)
+      test2 <- rbind(s1,s2)
+      bar <- barplot(test, ylim = c(0,35), col = c("red","blue"), beside = TRUE, main = paste("Average Points per Game for",input$conchart_playerA, "&",input$conchart_playerB),
+                     xlab = "Year", ylab = "Points per Game")
+      segments(bar,test-test2,bar,test+test2, lwd = 1)
+      legend("topright",c(input$conchart_playerA, input$conchart_playerB),col = c("red","blue"), lwd = 8)
+    }
+    
+    if(input$conchart_playerA == "None" & input$conchart_playerB != "None" & input$conchart_playerC != "None"){
+      conavg <- as.matrix(conyear[,2:9])
+      rownames(conavg) <- conyear$player
+      consd <- as.matrix(conyear[,10:17])
+      rownames(consd) <- conyear$player
+      p1 <- conavg[input$conchart_playerB,]
+      s1 <- consd[input$conchart_playerB,]
+      p2 <- conavg[input$conchart_playerC,]
+      s2 <- consd[input$conchart_playerC,]
+      test <- rbind(p1,p2)
+      test2 <- rbind(s1,s2)
+      bar <- barplot(test, ylim = c(0,35), col = c("blue",rgb(0,1,0,0.5)), beside = TRUE, main = paste("Average Points per Game for",input$conchart_playerB, "&",input$conchart_playerC),
+                     xlab = "Year", ylab = "Points per Game")
+      segments(bar,test-test2,bar,test+test2, lwd = 1)
+      legend("topright",c(input$conchart_playerB, input$conchart_playerC),col = c("blue",rgb(0,1,0,0.5)), lwd = 8)
+    }
+    
+    if(input$conchart_playerA != "None" & input$conchart_playerB == "None" & input$conchart_playerC != "None"){
+      conavg <- as.matrix(conyear[,2:9])
+      rownames(conavg) <- conyear$player
+      consd <- as.matrix(conyear[,10:17])
+      rownames(consd) <- conyear$player
+      p1 <- conavg[input$conchart_playerA,]
+      s1 <- consd[input$conchart_playerA,]
+      p2 <- conavg[input$conchart_playerC,]
+      s2 <- consd[input$conchart_playerC,]
+      test <- rbind(p1,p2)
+      test2 <- rbind(s1,s2)
+      bar <- barplot(test, ylim = c(0,35), col = c("red",rgb(0,1,0,0.5)), beside = TRUE, main = paste("Average Points per Game for",input$conchart_playerA, "&",input$conchart_playerC),
+                     xlab = "Year", ylab = "Points per Game")
+      segments(bar,test-test2,bar,test+test2, lwd = 1)
+      legend("topright",c(input$conchart_playerA, input$conchart_playerC),col = c("red",rgb(0,1,0,0.5)), lwd = 8)
+    }
+    
+    if(input$conchart_playerA != "None" & input$conchart_playerB != "None" & input$conchart_playerC != "None"){
+      conavg <- as.matrix(conyear[,2:9])
+      rownames(conavg) <- conyear$player
+      consd <- as.matrix(conyear[,10:17])
+      rownames(consd) <- conyear$player
+      p1 <- conavg[input$conchart_playerA,]
+      s1 <- consd[input$conchart_playerA,]
+      p2 <- conavg[input$conchart_playerB,]
+      s2 <- consd[input$conchart_playerB,]
+      p3 <- conavg[input$conchart_playerC,]
+      s3 <- consd[input$conchart_playerC,]
+      test <- rbind(p1,p2,p3)
+      test2 <- rbind(s1,s2,s3)
+      bar <- barplot(test, ylim = c(0,35), col = c("red","blue",rgb(0,1,0,0.5)), beside = TRUE, main = paste("Average Points per Game for",input$conchart_playerA, "&",input$conchart_playerB,"&",input$conchart_playerC),
+                     xlab = "Year", ylab = "Points per Game")
+      segments(bar,test-test2,bar,test+test2, lwd = 1)
+      legend("topright",c(input$conchart_playerA,input$conchart_playerB,input$conchart_playerC),col = c("red","blue",rgb(0,1,0,0.5)), lwd = 8)
+    }
+    
+    bar
+    
+  })
+  
+  output$con_dt <- renderDataTable({
+    DT::datatable({
+      
+      if(input$conchart_playerA == "None" & input$conchart_playerB == "None" & input$conchart_playerC == "None"){
+        paste("Please select a player...")
+      }
+      
+      if(input$conchart_playerA != "None" & input$conchart_playerB == "None" & input$conchart_playerC == "None"){
+        conavg <- as.matrix(conyear[,2:9])
+        rownames(conavg) <- conyear$player
+        consd <- as.matrix(conyear[,10:17])
+        rownames(consd) <- conyear$player
+        p1 <- conavg[input$conchart_playerA,]
+        s1 <- consd[input$conchart_playerA,]
+        con <- t(rbind(p1,s1))
+        colnames(con) <- c(paste(input$conchart_playerA,"Avg"),paste(input$conchart_playerA,"StdDev"))
+      }
+      
+      if(input$conchart_playerA == "None" & input$conchart_playerB != "None" & input$conchart_playerC == "None"){
+        conavg <- as.matrix(conyear[,2:9])
+        rownames(conavg) <- conyear$player
+        consd <- as.matrix(conyear[,10:17])
+        rownames(consd) <- conyear$player
+        p1 <- conavg[input$conchart_playerB,]
+        s1 <- consd[input$conchart_playerB,]
+        con <- t(rbind(p1,s1))
+        colnames(con) <- c(paste(input$conchart_playerB,"Avg"),paste(input$conchart_playerB,"StdDev"))
+      }
+      
+      if(input$conchart_playerA == "None" & input$conchart_playerB == "None" & input$conchart_playerC != "None"){
+        conavg <- as.matrix(conyear[,2:9])
+        rownames(conavg) <- conyear$player
+        consd <- as.matrix(conyear[,10:17])
+        rownames(consd) <- conyear$player
+        p1 <- conavg[input$conchart_playerC,]
+        s1 <- consd[input$conchart_playerC,]
+        con <- t(rbind(p1,s1))
+        colnames(con) <- c(paste(input$conchart_playerC,"Avg"),paste(input$conchart_playerC,"StdDev"))
+      }
+      
+      if(input$conchart_playerA != "None" & input$conchart_playerB != "None" & input$conchart_playerC == "None"){
+        conavg <- as.matrix(conyear[,2:9])
+        rownames(conavg) <- conyear$player
+        consd <- as.matrix(conyear[,10:17])
+        rownames(consd) <- conyear$player
+        p1 <- conavg[input$conchart_playerA,]
+        s1 <- consd[input$conchart_playerA,]
+        p2 <- conavg[input$conchart_playerB,]
+        s2 <- consd[input$conchart_playerB,]
+        test <- rbind(p1,p2)
+        test2 <- rbind(s1,s2)
+        con <- t(rbind(p1,s1,p2,s2))
+        colnames(con) <- c(paste(input$conchart_playerA,"Avg"),paste(input$conchart_playerA,"StdDev"),
+                           paste(input$conchart_playerB,"Avg"),paste(input$conchart_playerB,"StdDev"))
+      }
+      
+      if(input$conchart_playerA == "None" & input$conchart_playerB != "None" & input$conchart_playerC != "None"){
+        conavg <- as.matrix(conyear[,2:9])
+        rownames(conavg) <- conyear$player
+        consd <- as.matrix(conyear[,10:17])
+        rownames(consd) <- conyear$player
+        p1 <- conavg[input$conchart_playerB,]
+        s1 <- consd[input$conchart_playerB,]
+        p2 <- conavg[input$conchart_playerC,]
+        s2 <- consd[input$conchart_playerC,]
+        test <- rbind(p1,p2)
+        test2 <- rbind(s1,s2)
+        con <- t(rbind(p1,s1,p2,s2))
+        colnames(con) <- c(paste(input$conchart_playerB,"Avg"),paste(input$conchart_playerB,"StdDev"),
+                           paste(input$conchart_playerC,"Avg"),paste(input$conchart_playerC,"StdDev"))
+      }
+      
+      if(input$conchart_playerA != "None" & input$conchart_playerB == "None" & input$conchart_playerC != "None"){
+        conavg <- as.matrix(conyear[,2:9])
+        rownames(conavg) <- conyear$player
+        consd <- as.matrix(conyear[,10:17])
+        rownames(consd) <- conyear$player
+        p1 <- conavg[input$conchart_playerA,]
+        s1 <- consd[input$conchart_playerA,]
+        p2 <- conavg[input$conchart_playerC,]
+        s2 <- consd[input$conchart_playerC,]
+        test <- rbind(p1,p2)
+        test2 <- rbind(s1,s2)
+        con <- t(rbind(p1,s1,p2,s2))
+        colnames(con) <- c(paste(input$conchart_playerA,"Avg"),paste(input$conchart_playerA,"StdDev"),
+                           paste(input$conchart_playerC,"Avg"),paste(input$conchart_playerC,"StdDev"))
+      }
+      
+      if(input$conchart_playerA != "None" & input$conchart_playerB != "None" & input$conchart_playerC != "None"){
+        conavg <- as.matrix(conyear[,2:9])
+        rownames(conavg) <- conyear$player
+        consd <- as.matrix(conyear[,10:17])
+        rownames(consd) <- conyear$player
+        p1 <- conavg[input$conchart_playerA,]
+        s1 <- consd[input$conchart_playerA,]
+        p2 <- conavg[input$conchart_playerB,]
+        s2 <- consd[input$conchart_playerB,]
+        p3 <- conavg[input$conchart_playerC,]
+        s3 <- consd[input$conchart_playerC,]
+        test <- rbind(p1,p2,p3)
+        test2 <- rbind(s1,s2,s3)
+        con <- t(rbind(p1,s1,p2,s2,p3,s3))
+        colnames(con) <- c(paste(input$conchart_playerA,"Avg"),paste(input$conchart_playerA,"StdDev"),
+                           paste(input$conchart_playerB,"Avg"),paste(input$conchart_playerB,"StdDev"),
+                           paste(input$conchart_playerC,"Avg"),paste(input$conchart_playerC,"StdDev") )
+      }
+      
+      con
+      
+    },options = list(dom = 't'))
+  })
+  
   #Print Start/Sit Tool
   output$probA <- renderText({
     
@@ -779,7 +1033,7 @@ server <- function(input, output) {
       x <- as.matrix(weekly_data[1576:2098,2:35])
       y <- weekly_data[1576:2098,1]
       rownames(x) <- y
-      pointsA <- input$con_numberA
+      pointsA <- input$con_number
       count <- 0
       
       p1 <- x[(input$con_playerA),]
@@ -796,7 +1050,7 @@ server <- function(input, output) {
       x <- as.matrix(weekly_data[1051:1573,2:35])
       y <- weekly_data[1576:2098,1]
       rownames(x) <- y
-      pointsA <- input$con_numberA
+      pointsA <- input$con_number
       count <- 0
       
       p1 <- x[(input$con_playerA),]
@@ -813,7 +1067,7 @@ server <- function(input, output) {
       x <- as.matrix(weekly_data[1:523,2:35])
       y <- weekly_data[1576:2098,1]
       rownames(x) <- y
-      pointsA <- input$con_numberA
+      pointsA <- input$con_number
       count <- 0
       
       p1 <- x[(input$con_playerA),]
@@ -830,7 +1084,7 @@ server <- function(input, output) {
       x <- as.matrix(weekly_data[526:1048,2:35])
       y <- weekly_data[1576:2098,1]
       rownames(x) <- y
-      pointsA <- input$con_numberA
+      pointsA <- input$con_number
       count <- 0
       
       p1 <- x[(input$con_playerA),]
@@ -843,7 +1097,7 @@ server <- function(input, output) {
       a <- count/length(na.omit(p1))
     }
     
-    paste("Probability",input$con_playerA,">=",input$con_numberA,": ",signif(a, digits = 4)*100,"%")
+    paste("Probability",input$con_playerA,">=",input$con_number,": ",signif(a, digits = 4)*100,"%")
     
   })
   
@@ -853,7 +1107,7 @@ server <- function(input, output) {
       x <- as.matrix(weekly_data[1576:2098,2:35])
       y <- weekly_data[1576:2098,1]
       rownames(x) <- y
-      pointsB <- input$con_numberB
+      pointsB <- input$con_number
       count <- 0
       
       p2 <- x[(input$con_playerB),]
@@ -870,7 +1124,7 @@ server <- function(input, output) {
       x <- as.matrix(weekly_data[1051:1573,2:35])
       y <- weekly_data[1576:2098,1]
       rownames(x) <- y
-      pointsB <- input$con_numberB
+      pointsB <- input$con_number
       count <- 0
       
       p2 <- x[(input$con_playerB),]
@@ -887,7 +1141,7 @@ server <- function(input, output) {
       x <- as.matrix(weekly_data[1:523,2:35])
       y <- weekly_data[1576:2098,1]
       rownames(x) <- y
-      pointsB <- input$con_numberB
+      pointsB <- input$con_number
       count <- 0
       
       p2 <- x[(input$con_playerB),]
@@ -904,7 +1158,7 @@ server <- function(input, output) {
       x <- as.matrix(weekly_data[526:1048,2:35])
       y <- weekly_data[1576:2098,1]
       rownames(x) <- y
-      pointsB <- input$con_numberB
+      pointsB <- input$con_number
       count <- 0
       
       p2 <- x[(input$con_playerB),]
@@ -917,7 +1171,7 @@ server <- function(input, output) {
       b <- count/length(na.omit(p2))
     }
     
-    paste("Probability",input$con_playerB,">=",input$con_numberB,": ",signif(b, digits = 4)*100,"%")
+    paste("Probability",input$con_playerB,">=",input$con_number,": ",signif(b, digits = 4)*100,"%")
     
   })
   
@@ -963,7 +1217,7 @@ server <- function(input, output) {
       p2 <- as.numeric(p2)
     }
     
-    hist(p1, col = "red", main = paste("Histogram of", input$con_playerA, "&", input$con_playerB), xlab = "Fantasy Points", ylim = c(0,20))
+    hist(p1, col = "red", main = paste("Histogram of", input$con_playerA, "&", input$con_playerB), xlab = "Fantasy Points", ylim = c(0,15),xlim = c(-5,50))
     hist(p2, col = rgb(0,1,0,0.5), add = TRUE)
     legend("topright",c(input$con_playerA,input$con_playerB),col = c("red",rgb(0,1,0,0.5)), lwd = 8)
   })
@@ -1114,6 +1368,7 @@ server <- function(input, output) {
       both <- p1
       barplot(both, main = paste("Weekly Finishes for", input$player_weeklyA), col = "red",
               xlab = "Weekly Finish", ylab = "Frequency", ylim = c(0,100))
+      legend("topright",c(input$player_weeklyA),col = c("red"), lwd = 8)
     }
     
     if(input$player_weeklyA == "None" & input$player_weeklyB != "None" &input$player_weeklyC == "None" & input$tog_wf == "Total"){
@@ -1122,8 +1377,9 @@ server <- function(input, output) {
       y <- t(x)
       p1 <- y[,input$player_weeklyB]
       both <- p1
-      barplot(both, main = paste("Weekly Finishes for", input$player_weeklyB), col = "red",
+      barplot(both, main = paste("Weekly Finishes for", input$player_weeklyB), col = "blue",
               xlab = "Weekly Finish", ylab = "Frequency", ylim = c(0,100))
+      legend("topright",c(input$player_weeklyB),col = c("blue"), lwd = 8)
     }
     
     if(input$player_weeklyA == "None" & input$player_weeklyB == "None" &input$player_weeklyC != "None" & input$tog_wf == "Total"){
@@ -1132,8 +1388,9 @@ server <- function(input, output) {
       y <- t(x)
       p1 <- y[,input$player_weeklyC]
       both <- p1
-      barplot(both, main = paste("Weekly Finishes for", input$player_weeklyC), col = "red",
+      barplot(both, main = paste("Weekly Finishes for", input$player_weeklyC), col = rgb(0,1,0,0.5),
               xlab = "Weekly Finish", ylab = "Frequency", ylim = c(0,100))
+      legend("topright",c(input$player_weeklyC),col = c(rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_weeklyA != "None" & input$player_weeklyB != "None" &input$player_weeklyC == "None" & input$tog_wf == "Total"){
@@ -1143,8 +1400,8 @@ server <- function(input, output) {
       p1 <- y[,input$player_weeklyA]
       p2 <- y[,input$player_weeklyB]
       both <- rbind(p1,p2)
-      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyB), beside = TRUE, col = c("red",rgb(0,1,0,0.5)), xlab = "Weekly Finish", ylab = "Frequency", ylim = c(0,100))
-      legend("topright",c(input$player_weeklyA,input$player_weeklyB),col = c("red",rgb(0,1,0,0.5)), lwd = 8)
+      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyB), beside = TRUE, col = c("red","blue"), xlab = "Weekly Finish", ylab = "Frequency", ylim = c(0,100))
+      legend("topright",c(input$player_weeklyA,input$player_weeklyB),col = c("red","blue"), lwd = 8)
     }
     
     if(input$player_weeklyA == "None" & input$player_weeklyB != "None" &input$player_weeklyC != "None" & input$tog_wf == "Total"){
@@ -1154,8 +1411,8 @@ server <- function(input, output) {
       p1 <- y[,input$player_weeklyB]
       p2 <- y[,input$player_weeklyC]
       both <- rbind(p1,p2)
-      barplot(both, main = paste("Comparison of", input$player_weeklyB, "&", input$player_weeklyC), beside = TRUE, col = c(rgb(0,1,0,0.5),"blue"), xlab = "Weekly Finish", ylab = "Frequency", ylim = c(0,100))
-      legend("topright",c(input$player_weeklB,input$player_weeklyC),col = c(rgb(0,1,0,0.5),"blue"), lwd = 8)
+      barplot(both, main = paste("Comparison of", input$player_weeklyB, "&", input$player_weeklyC), beside = TRUE, col = c("blue",rgb(0,1,0,0.5)), xlab = "Weekly Finish", ylab = "Frequency", ylim = c(0,100))
+      legend("topright",c(input$player_weeklyB,input$player_weeklyC),col = c("blue",rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_weeklyA != "None" & input$player_weeklyB == "None" &input$player_weeklyC != "None" & input$tog_wf == "Total"){
@@ -1165,8 +1422,8 @@ server <- function(input, output) {
       p1 <- y[,input$player_weeklyA]
       p2 <- y[,input$player_weeklyC]
       both <- rbind(p1,p2)
-      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyC), beside = TRUE, col = c("red","blue"), xlab = "Weekly Finish", ylab = "Frequency", ylim = c(0,100))
-      legend("topright",c(input$player_weeklyA,input$player_weeklyC),col = c("red","blue"), lwd = 8)
+      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyC), beside = TRUE, col = c("red",rgb(0,1,0,0.5)), xlab = "Weekly Finish", ylab = "Frequency", ylim = c(0,100))
+      legend("topright",c(input$player_weeklyA,input$player_weeklyC),col = c("red",rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_weeklyA != "None" & input$player_weeklyB != "None" &input$player_weeklyC != "None" & input$tog_wf == "Total"){
@@ -1177,8 +1434,8 @@ server <- function(input, output) {
       p2 <- y[,input$player_weeklyB]
       p3 <- y[,input$player_weeklyC]
       both <- rbind(p1,p2,p3)
-      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyB, "&", input$player_weeklyC), beside = TRUE, col = c("red",rgb(0,1,0,0.5),"blue"), xlab = "Weekly Finish", ylab = "Frequency", ylim = c(0,100))
-      legend("topright",c(input$player_weeklyA,input$player_weeklyB,input$player_weeklyC),col = c("red",rgb(0,1,0,0.5),"blue"), lwd = 8)
+      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyB, "&", input$player_weeklyC), beside = TRUE, col = c("red","blue",rgb(0,1,0,0.5)), xlab = "Weekly Finish", ylab = "Frequency", ylim = c(0,100))
+      legend("topright",c(input$player_weeklyA,input$player_weeklyB,input$player_weeklyC),col = c("red","blue",rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_weeklyA == "None" & input$player_weeklyB == "None" &input$player_weeklyC == "None" & input$tog_wf == "Percent"){
@@ -1193,6 +1450,7 @@ server <- function(input, output) {
       both <- p1
       barplot(both, main = paste("Weekly Finishes for", input$player_weeklyA), col = "red",
               xlab = "Weekly Finish", ylab = "Percentage", ylim = c(0,70))
+      legend("topright",c(input$player_weeklyA),col = c("red"), lwd = 8)
     }
     
     if(input$player_weeklyA == "None" & input$player_weeklyB != "None" &input$player_weeklyC == "None" & input$tog_wf == "Percent"){
@@ -1201,8 +1459,9 @@ server <- function(input, output) {
       y <- t(x)
       p1 <- y[,input$player_weeklyB]
       both <- p1
-      barplot(both, main = paste("Weekly Finishes for", input$player_weeklyB), col = "red",
+      barplot(both, main = paste("Weekly Finishes for", input$player_weeklyB), col = "blue",
               xlab = "Weekly Finish", ylab = "Percentage", ylim = c(0,70))
+      legend("topright",c(input$player_weeklyB),col = c("blue"), lwd = 8)
     }
     
     if(input$player_weeklyA == "None" & input$player_weeklyB == "None" &input$player_weeklyC != "None" & input$tog_wf == "Percent"){
@@ -1211,8 +1470,9 @@ server <- function(input, output) {
       y <- t(x)
       p1 <- y[,input$player_weeklyC]
       both <- p1
-      barplot(both, main = paste("Weekly Finishes for", input$player_weeklyC), col = "red",
+      barplot(both, main = paste("Weekly Finishes for", input$player_weeklyC), col = rgb(0,1,0,0.5),
               xlab = "Weekly Finish", ylab = "Percentage", ylim = c(0,70))
+      legend("topright",c(input$player_weeklyC),col = c(rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_weeklyA != "None" & input$player_weeklyB != "None" &input$player_weeklyC == "None" & input$tog_wf == "Percent"){
@@ -1222,8 +1482,8 @@ server <- function(input, output) {
       p1 <- y[,input$player_weeklyA]
       p2 <- y[,input$player_weeklyB]
       both <- rbind(p1,p2)
-      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyB), beside = TRUE, col = c("red",rgb(0,1,0,0.5)), xlab = "Weekly Finish", ylab = "Percentage", ylim = c(0,70))
-      legend("topright",c(input$player_weeklyA,input$player_weeklyB),col = c("red",rgb(0,1,0,0.5)), lwd = 8)
+      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyB), beside = TRUE, col = c("red","blue"), xlab = "Weekly Finish", ylab = "Percentage", ylim = c(0,70))
+      legend("topright",c(input$player_weeklyA,input$player_weeklyB),col = c("red","blue"), lwd = 8)
     }
     
     if(input$player_weeklyA == "None" & input$player_weeklyB != "None" &input$player_weeklyC != "None" & input$tog_wf == "Percent"){
@@ -1233,8 +1493,8 @@ server <- function(input, output) {
       p1 <- y[,input$player_weeklyB]
       p2 <- y[,input$player_weeklyC]
       both <- rbind(p1,p2)
-      barplot(both, main = paste("Comparison of", input$player_weeklyB, "&", input$player_weeklyC), beside = TRUE, col = c(rgb(0,1,0,0.5),"blue"), xlab = "Weekly Finish", ylab = "Percentage", ylim = c(0,70))
-      legend("topright",c(input$player_weeklB,input$player_weeklyC),col = c(rgb(0,1,0,0.5),"blue"), lwd = 8)
+      barplot(both, main = paste("Comparison of", input$player_weeklyB, "&", input$player_weeklyC), beside = TRUE, col = c("blue",rgb(0,1,0,0.5)), xlab = "Weekly Finish", ylab = "Percentage", ylim = c(0,70))
+      legend("topright",c(input$player_weeklyB,input$player_weeklyC),col = c("blue",rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_weeklyA != "None" & input$player_weeklyB == "None" &input$player_weeklyC != "None" & input$tog_wf == "Percent"){
@@ -1244,8 +1504,8 @@ server <- function(input, output) {
       p1 <- y[,input$player_weeklyA]
       p2 <- y[,input$player_weeklyC]
       both <- rbind(p1,p2)
-      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyC), beside = TRUE, col = c("red","blue"), xlab = "Weekly Finish", ylab = "Percentage", ylim = c(0,70))
-      legend("topright",c(input$player_weeklyA,input$player_weeklyC),col = c("red","blue"), lwd = 8)
+      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyC), beside = TRUE, col = c("red",rgb(0,1,0,0.5)), xlab = "Weekly Finish", ylab = "Percentage", ylim = c(0,70))
+      legend("topright",c(input$player_weeklyA,input$player_weeklyC),col = c("red",rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_weeklyA != "None" & input$player_weeklyB != "None" &input$player_weeklyC != "None" & input$tog_wf == "Percent"){
@@ -1256,8 +1516,8 @@ server <- function(input, output) {
       p2 <- y[,input$player_weeklyB]
       p3 <- y[,input$player_weeklyC]
       both <- rbind(p1,p2,p3)
-      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyB, "&", input$player_weeklyC), beside = TRUE, col = c("red",rgb(0,1,0,0.5),"blue"), xlab = "Weekly Finish", ylab = "Percentage", ylim = c(0,70))
-      legend("topright",c(input$player_weeklyA,input$player_weeklyB,input$player_weeklyC),col = c("red",rgb(0,1,0,0.5),"blue"), lwd = 8)
+      barplot(both, main = paste("Comparison of", input$player_weeklyA, "&", input$player_weeklyB, "&", input$player_weeklyC), beside = TRUE, col = c("red","blue",rgb(0,1,0,0.5)), xlab = "Weekly Finish", ylab = "Percentage", ylim = c(0,70))
+      legend("topright",c(input$player_weeklyA,input$player_weeklyB,input$player_weeklyC),col = c("red","blue",rgb(0,1,0,0.5)), lwd = 8)
     }
   })
   
@@ -1513,102 +1773,112 @@ server <- function(input, output) {
     if(input$player_yearlyA != "None" & input$player_yearlyB == "None" & input$player_yearlyC == "None"){
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
-      p1 <- x[(input$player_yearlyA),]
+      y <- x[,ncol(x):1]
+      p1 <- y[(input$player_yearlyA),]
       
-      plot(na.omit(p1),type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,40)),xlab = "Year",
+      plot(p1,type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,40)),xlab = "Year",
            ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyA), col = "red")
-      axis(1, at=1:8, lab=c("'17","'16","'15","'14","'13","'12","'11","'10"))
+      axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
       axis(2, at=c(1,1:40*5))
+      legend("bottomleft",c(input$player_yearlyA),col = c("red"), lwd = 8)
     }
     
     if(input$player_yearlyA == "None" & input$player_yearlyB != "None" & input$player_yearlyC == "None"){
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
-      p1 <- x[(input$player_yearlyB),]
+      y <- x[,ncol(x):1]
+      p1 <- y[(input$player_yearlyB),]
       
-      plot(na.omit(p1),type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,40)),xlab = "Year",
-           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyB), col = "red")
-      axis(1, at=1:8, lab=c("'17","'16","'15","'14","'13","'12","'11","'10"))
+      plot(p1,type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,40)),xlab = "Year",
+           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyB), col = "blue")
+      axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
       axis(2, at=c(1,1:40*5))
+      legend("bottomleft",c(input$player_yearlyB),col = c("blue"), lwd = 8)
     }
     
     if(input$player_yearlyA == "None" & input$player_yearlyB == "None" & input$player_yearlyC != "None"){
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
-      p1 <- x[(input$player_yearlyC),]
+      y <- x[,ncol(x):1]
+      p1 <- y[(input$player_yearlyC),]
       
-      plot(na.omit(p1),type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,40)),xlab = "Year",
-           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyC), col = "red")
-      axis(1, at=1:8, lab=c("'17","'16","'15","'14","'13","'12","'11","'10"))
+      plot(p1,type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,40)),xlab = "Year",
+           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyC), col = rgb(0,1,0,0.5))
+      axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
       axis(2, at=c(1,1:40*5))
+      legend("bottomleft",c(input$player_yearlyC),col = c(rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_yearlyA != "None" & input$player_yearlyB != "None" & input$player_yearlyC == "None"){
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
-      p1 <- x[(input$player_yearlyA),]
-      p2 <- x[(input$player_yearlyB),]
+      y <- x[,ncol(x):1]
+      p1 <- y[(input$player_yearlyA),]
+      p2 <- y[(input$player_yearlyB),]
       
-      plot(na.omit(p1),type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
-           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyA, "&", input$player_yearlyB), col = c("red",rgb(0,1,0,0.5)))
+      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
+           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyA, "&", input$player_yearlyB), col = c("red","blue"))
       par(new = TRUE)
-      plot(na.omit(p2),type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
-           ylab = "", col = rgb(0,1,0,0.5))
-      axis(1, at=1:8, lab=c("'17","'16","'15","'14","'13","'12","'11","'10"))
+      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
+           ylab = "", col = "blue")
+      axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
       axis(2, at=c(1,1:40*5))
-      legend("bottomright",c(input$player_yearlyA,input$player_yearlyB),col = c("red",rgb(0,1,0,0.5)), lwd = 8)
+      legend("bottomleft",c(input$player_yearlyA,input$player_yearlyB),col = c("red","blue"), lwd = 8)
     }
     
     if(input$player_yearlyA == "None" & input$player_yearlyB != "None" & input$player_yearlyC != "None"){
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
-      p1 <- x[(input$player_yearlyB),]
-      p2 <- x[(input$player_yearlyC),]
+      y <- x[,ncol(x):1]
+      p1 <- y[(input$player_yearlyB),]
+      p2 <- y[(input$player_yearlyC),]
       
-      plot(na.omit(p1),type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
-           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyB, "&", input$player_yearlyC), col = c(rgb(0,1,0,0.5),"blue"))
+      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
+           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyB, "&", input$player_yearlyC), col = c("blue",rgb(0,1,0,0.5)))
       par(new = TRUE)
-      plot(na.omit(p2),type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
+      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
            ylab = "", col = rgb(0,1,0,0.5))
-      axis(1, at=1:8, lab=c("'17","'16","'15","'14","'13","'12","'11","'10"))
+      axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
       axis(2, at=c(1,1:40*5))
-      legend("bottomright",c(input$player_yearlyB,input$player_yearlyC),col = c(rgb(0,1,0,0.5),"blue"), lwd = 8)
+      legend("bottomleft",c(input$player_yearlyB,input$player_yearlyC),col = c("blue",rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_yearlyA != "None" & input$player_yearlyB == "None" & input$player_yearlyC != "None"){
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
-      p1 <- x[(input$player_yearlyA),]
-      p2 <- x[(input$player_yearlyC),]
+      y <- x[,ncol(x):1]
+      p1 <- y[(input$player_yearlyA),]
+      p2 <- y[(input$player_yearlyC),]
       
-      plot(na.omit(p1),type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
-           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyA, "&", input$player_yearlyC), col = c("red","blue"))
+      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
+           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyA, "&", input$player_yearlyC), col = c("red",rgb(0,1,0,0.5)))
       par(new = TRUE)
-      plot(na.omit(p2),type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
+      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
            ylab = "", col = rgb(0,1,0,0.5))
-      axis(1, at=1:8, lab=c("'17","'16","'15","'14","'13","'12","'11","'10"))
+      axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
       axis(2, at=c(1,1:40*5))
-      legend("bottomright",c(input$player_yearlyA,input$player_yearlyC),col = c("red","blue"), lwd = 8)
+      legend("bottomleft",c(input$player_yearlyA,input$player_yearlyC),col = c("red",rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_yearlyA != "None" & input$player_yearlyB != "None" & input$player_yearlyC != "None"){
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
-      p1 <- x[(input$player_yearlyA),]
-      p2 <- x[(input$player_yearlyB),]
-      p3 <- x[(input$player_yearlyC),]
+      y <- x[,ncol(x):1]
+      p1 <- y[(input$player_yearlyA),]
+      p2 <- y[(input$player_yearlyB),]
+      p3 <- y[(input$player_yearlyC),]
       
-      plot(na.omit(p1),type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
-           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyA, "&", input$player_yearlyB, "&", input$player_yearlyC), col = c("red",rgb(0,1,0,0.5),"blue"))
+      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
+           ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyA, "&", input$player_yearlyB, "&", input$player_yearlyC), col = c("red","blue",rgb(0,1,0,0.5)))
       par(new = TRUE)
-      plot(na.omit(p2),type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
-           ylab = "", col = rgb(0,1,0,0.5))
-      par(new=TRUE)
-      plot(na.omit(p3),type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
+      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
            ylab = "", col = "blue")
-      axis(1, at=1:8, lab=c("'17","'16","'15","'14","'13","'12","'11","'10"))
+      par(new=TRUE)
+      plot(p3,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
+           ylab = "", col = rgb(0,1,0,0.5))
+      axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
       axis(2, at=c(1,1:40*5))
-      legend("bottomright",c(input$player_yearlyA,input$player_yearlyB,input$player_yearlyC),col = c("red",rgb(0,1,0,0.5),"blue"), lwd = 8)
+      legend("bottomleft",c(input$player_yearlyA,input$player_yearlyB,input$player_yearlyC),col = c("red","blue",rgb(0,1,0,0.5)), lwd = 8)
     }
   })
   
