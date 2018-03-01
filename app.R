@@ -1771,113 +1771,157 @@ server <- function(input, output) {
     }
     
     if(input$player_yearlyA != "None" & input$player_yearlyB == "None" & input$player_yearlyC == "None"){
+      mround <- function(x,base){ 
+        base*ceiling(x/base) 
+      } 
+      
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
       y <- x[,ncol(x):1]
       p1 <- y[(input$player_yearlyA),]
+      p1max <- mround(max(p1, na.rm = TRUE),5)
       
-      plot(p1,type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,40)),xlab = "Year",
+      plot(p1,type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,p1max)),xlab = "Year",
            ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyA), col = "red")
       axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
-      axis(2, at=c(1,1:40*5))
+      axis(2, at=c(1,1:p1max))
       legend("bottomleft",c(input$player_yearlyA),col = c("red"), lwd = 8)
     }
     
     if(input$player_yearlyA == "None" & input$player_yearlyB != "None" & input$player_yearlyC == "None"){
+      mround <- function(x,base){ 
+        base*ceiling(x/base) 
+      } 
+      
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
       y <- x[,ncol(x):1]
       p1 <- y[(input$player_yearlyB),]
+      p1max <- mround(max(p1, na.rm = TRUE),5)
       
-      plot(p1,type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,40)),xlab = "Year",
+      plot(p1,type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,p1max)),xlab = "Year",
            ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyB), col = "blue")
       axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
-      axis(2, at=c(1,1:40*5))
+      axis(2, at=c(1,1:p1max))
       legend("bottomleft",c(input$player_yearlyB),col = c("blue"), lwd = 8)
     }
     
     if(input$player_yearlyA == "None" & input$player_yearlyB == "None" & input$player_yearlyC != "None"){
+      mround <- function(x,base){ 
+        base*ceiling(x/base) 
+      } 
+      
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
       y <- x[,ncol(x):1]
       p1 <- y[(input$player_yearlyC),]
+      p1max <- mround(max(p1, na.rm = TRUE),5)
       
-      plot(p1,type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,40)),xlab = "Year",
+      plot(p1,type = "l",axes = FALSE,xlim = c(1,8),ylim = rev(c(1,p1max)),xlab = "Year",
            ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyC), col = rgb(0,1,0,0.5))
       axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
-      axis(2, at=c(1,1:40*5))
+      axis(2, at=c(1,1:p1max))
       legend("bottomleft",c(input$player_yearlyC),col = c(rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_yearlyA != "None" & input$player_yearlyB != "None" & input$player_yearlyC == "None"){
+      mround <- function(x,base){ 
+        base*ceiling(x/base) 
+      } 
+      
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
       y <- x[,ncol(x):1]
       p1 <- y[(input$player_yearlyA),]
       p2 <- y[(input$player_yearlyB),]
+      p1max <- mround(max(p1, na.rm = TRUE),5)
+      p2max <- mround(max(p2, na.rm = TRUE),5)
+      bothmax <- max(rbind(p1max,p2max))
       
-      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
+      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,bothmax)),xlab = "Year",
            ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyA, "&", input$player_yearlyB), col = c("red","blue"))
       par(new = TRUE)
-      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
+      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,bothmax)),xlab = "",
            ylab = "", col = "blue")
       axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
-      axis(2, at=c(1,1:40*5))
+      axis(2, at=c(1,1:bothmax))
       legend("bottomleft",c(input$player_yearlyA,input$player_yearlyB),col = c("red","blue"), lwd = 8)
     }
     
     if(input$player_yearlyA == "None" & input$player_yearlyB != "None" & input$player_yearlyC != "None"){
+      mround <- function(x,base){ 
+        base*ceiling(x/base) 
+      } 
+      
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
       y <- x[,ncol(x):1]
       p1 <- y[(input$player_yearlyB),]
       p2 <- y[(input$player_yearlyC),]
+      p1max <- mround(max(p1, na.rm = TRUE),5)
+      p2max <- mround(max(p2, na.rm = TRUE),5)
+      bothmax <- max(rbind(p1max,p2max))
       
-      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
+      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,bothmax)),xlab = "Year",
            ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyB, "&", input$player_yearlyC), col = c("blue",rgb(0,1,0,0.5)))
       par(new = TRUE)
-      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
+      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,bothmax)),xlab = "",
            ylab = "", col = rgb(0,1,0,0.5))
       axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
-      axis(2, at=c(1,1:40*5))
+      axis(2, at=c(1,1:bothmax))
       legend("bottomleft",c(input$player_yearlyB,input$player_yearlyC),col = c("blue",rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_yearlyA != "None" & input$player_yearlyB == "None" & input$player_yearlyC != "None"){
+      mround <- function(x,base){ 
+        base*ceiling(x/base) 
+      } 
+      
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
       y <- x[,ncol(x):1]
       p1 <- y[(input$player_yearlyA),]
       p2 <- y[(input$player_yearlyC),]
+      p1max <- mround(max(p1, na.rm = TRUE),5)
+      p2max <- mround(max(p2, na.rm = TRUE),5)
+      bothmax <- max(rbind(p1max,p2max))
       
-      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
+      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,bothmax)),xlab = "Year",
            ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyA, "&", input$player_yearlyC), col = c("red",rgb(0,1,0,0.5)))
       par(new = TRUE)
-      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
+      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,bothmax)),xlab = "",
            ylab = "", col = rgb(0,1,0,0.5))
       axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
-      axis(2, at=c(1,1:40*5))
+      axis(2, at=c(1,1:bothmax))
       legend("bottomleft",c(input$player_yearlyA,input$player_yearlyC),col = c("red",rgb(0,1,0,0.5)), lwd = 8)
     }
     
     if(input$player_yearlyA != "None" & input$player_yearlyB != "None" & input$player_yearlyC != "None"){
+      mround <- function(x,base){ 
+        base*ceiling(x/base) 
+      } 
+      
       x <- as.matrix(yearly[,4:11])
       rownames(x) <- yearly$player
       y <- x[,ncol(x):1]
       p1 <- y[(input$player_yearlyA),]
       p2 <- y[(input$player_yearlyB),]
       p3 <- y[(input$player_yearlyC),]
+      p1max <- mround(max(p1, na.rm = TRUE),5)
+      p2max <- mround(max(p2, na.rm = TRUE),5)
+      p3max <- mround(max(p3, na.rm = TRUE),5)
+      allmax <- max(rbind(p1max,p2max,p3max))
       
-      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "Year",
+      plot(p1,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,allmax)),xlab = "Year",
            ylab = "Position Finish",main = paste("Yearly Finishes for", input$player_yearlyA, "&", input$player_yearlyB, "&", input$player_yearlyC), col = c("red","blue",rgb(0,1,0,0.5)))
       par(new = TRUE)
-      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
+      plot(p2,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,allmax)),xlab = "",
            ylab = "", col = "blue")
       par(new=TRUE)
-      plot(p3,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,40)),xlab = "",
+      plot(p3,type = "l",axes = FALSE, xlim = c(1,8), ylim = rev(c(1,allmax)),xlab = "",
            ylab = "", col = rgb(0,1,0,0.5))
       axis(1, at=1:8, lab=c("'10","'11","'12","'13","'14","'15","'16","'17"))
-      axis(2, at=c(1,1:40*5))
+      axis(2, at=c(1,1:allmax))
       legend("bottomleft",c(input$player_yearlyA,input$player_yearlyB,input$player_yearlyC),col = c("red","blue",rgb(0,1,0,0.5)), lwd = 8)
     }
   })
