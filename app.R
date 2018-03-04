@@ -2254,14 +2254,6 @@ server <- function(input, output) {
 
   })
   
-  datasetInput <- reactive({
-    switch(input$dataset,
-           "Consistency" = consistency, "Weekly" = weekly_data, "Yearly" = yearly,
-           "Defenses" = defenses,"Defenses (Avg)" = defenses_avg,"QB Database" = qbdata,
-           "RB Database" = rbdata,"WR Database" = wrdata,"TE Database" = tedata,
-           "IDP Database" = idpyear)
-  })
-  
   output$zscoretable <- renderDataTable({
     
     if(input$z_pos == "QB"){
@@ -2361,6 +2353,14 @@ server <- function(input, output) {
     }
     zscore
   },rownames = FALSE,options = list(dom = 't',paging=FALSE))
+  
+  datasetInput <- reactive({
+    switch(input$dataset,
+           "Consistency" = consistency, "Weekly" = total_weekly_data, "Yearly" = yearly,
+           "Defenses" = defenses,"Defenses (Avg)" = defenses_avg,"QB Database" = qbdata,
+           "RB Database" = rbdata,"WR Database" = wrdata,"TE Database" = tedata,
+           "IDP Database" = idpyear)
+  })
   
   output$downloadData <- downloadHandler(
     filename = function() {
