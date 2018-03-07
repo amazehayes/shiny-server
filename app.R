@@ -336,18 +336,33 @@ ui <- dashboardPage(
                               .sidebar {
                               color: #FFF;
                               position: fixed;
-                              width: 220px;
+                              width: 230px;
                               white-space: nowrap;
                               overflow: visible;
                               }
-                              
                               .main-header {
                               position: fixed;
                               width:100%;
                               }
+                              .content-wrapper, .right-side {
+                              min-height: 100%;
+                              background-color: #efefef;
+                              z-index: 800;
+                              }
+                              table.dataTable thead th, table.dataTable thead td {
+                              padding: 10px 18px;
+                              border-bottom: 1px solid #111;
+                              background: #ffffff;
+                              }
                               .content {
-                              padding-top: 60px;
+                              padding-top: 120px!important;
+                              }
+                              
+                              @media (min-width:768px) {
+                              .content {
+                              padding-top: 80px!important;
                               }'))),
+    
     tabItems(
     tabItem(tabName = "welcome",
             h1("Welcome!"),
