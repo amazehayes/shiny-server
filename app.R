@@ -1,5 +1,3 @@
-# FF Statistics
-
 library(shiny)
 library(shinydashboard)
 library(DT)
@@ -2385,7 +2383,7 @@ server <- function(input, output) {
     switch(input$dataset,
            "Consistency" = consistency, "Weekly" = total_weekly_data, "Yearly" = yearly,
            "Defenses" = defenses,"Defenses (Avg)" = defenses_avg,"QB Database" = qbdata,
-           "RB Database" = rbdata,"WR Database" = wrdata,"TE Database" = tedata2,
+           "RB Database" = rbdata,"WR Database" = wrdata,"TE Database" = tedata,
            "IDP Database" = idpyear)
   })
   
