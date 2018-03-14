@@ -1,6 +1,10 @@
+# FF Statistics test page
+
 library(shiny)
+library(shinyjs)
 library(shinydashboard)
 library(DT)
+library(rsconnect)
 
 zscores <- read.csv("zscores.csv")
 colnames(zscores) <- c("Year","Player","Age","Season","FanPts","ZScore","",
@@ -65,12 +69,12 @@ defenses_avg_te <- setNames(defenses_avg_te,c("Team","Targets","Receptions","Rec
 
 consistency <- read.csv("consistencydata.csv")
 consistency <- setNames(consistency, c("year","player","team","pos","posrank","games","total","avg",
-                                                 "std.dev","floor","ceiling","CV%","COR","#top12",
-                                                 "#13-24","#25-36","#rest"))
+                                       "std.dev","floor","ceiling","CV%","COR","#top12",
+                                       "#13-24","#25-36","#rest"))
 conyear <- read.csv("consistency.csv")
 conyear <- setNames(conyear, c("player","2017","2016","2015","2014","2013","2012",
-                                       "2011","2010","2017","2016","2015","2014","2013","2012",
-                                       "2011","2010"))
+                               "2011","2010","2017","2016","2015","2014","2013","2012",
+                               "2011","2010"))
 
 weekly_data <- read.csv("Weekly Data.csv")
 
@@ -272,166 +276,130 @@ tedata <- transform(tedata,
                     X.Targets.1 = as.numeric(sub("%","",X.Targets.1)),
                     TD..2 = as.numeric(sub("%","",TD..2)),
                     X.Rec.TD.1 = as.numeric(sub("%","",X.Rec.TD.1)),
+                    Team.Target..1 = as.numeric(sub("%","",Team.Target.)),
                     FP.from.Rec. = as.numeric(sub("%","",FP.from.Rec.)),
                     FP.from.Yards = as.numeric(sub("%","",FP.from.Yards)),
                     FP.from.TDs = as.numeric(sub("%","",FP.from.TDs)))
-colnames(tedata) <- c("Year","Player","Age","Season","Round","Overall",
-                      "Team","HeadCoach","OffCoordinator","DefCoordinator","SOS",
-                      "Oline","Games","Targets","Receptions","Reception%","RecYards",
-                      "RecTDs","Targets/G","MarketShare","Receptions/G","YPTarget","YPR",
-                      "RecYPG","RecTD%","ReturnYards","RZ.Targets<20","RZ.Receptions<20",
-                      "RZ.Rec%<20","RZ.RecTDs<20","RZ.%Targets<20","RZ.RecTD%<20",
-                      "RZ.%RecTD<20","RZ.TeamTarget%<20","RZ.Targets<10","RZ.Receptions<10",
-                      "RZ.Rec%<10","RZ.RecTDs<10","RZ.%Targets<10","RZ.RecTD%<10",
-                      "RZ.%RecTD<10","RZ.TeamTarget%<10","FPts(PPR)","FPts(1/2PPR)","FPts(STD)",
-                      "PPG(PPR)","PPG(1/2PPR)","PPG(STD)","PosRank(PPR)","PosRank(1/2PPR)",
-                      "PosRank(STD)","PPTarget(PPR)","PPTarget(1/2PPR)","PPTarget(STD)",
-                      "FPfromRec","FPfromRecYards","FPfromTDs","PPRMachine","YardMonster",
-                      "TDdepend")
+test <- read.csv("TEdata.csv")
+test <- transform(test, Team.Target. = as.numeric(sub("%","",Team.Target.)))
+colnames(test) <- ""
+tedata$Team.Target..1 <- test
+tedata <- setNames(tedata,c("Year","Player","Age","Season","Round","Overall",
+                            "Team","HeadCoach","OffCoordinator","DefCoordinator","SOS",
+                            "Oline","Games","Targets","Receptions","Reception%","RecYards",
+                            "RecTDs","Targets/G","MarketShare","Receptions/G","YPTarget","YPR",
+                            "RecYPG","RecTD%","ReturnYards","RZ.Targets<20","RZ.Receptions<20",
+                            "RZ.Rec%<20","RZ.RecTDs<20","RZ.%Targets<20","RZ.RecTD%<20",
+                            "RZ.%RecTD<20","RZ.TeamTarget%<20","RZ.Targets<10","RZ.Receptions<10",
+                            "RZ.Rec%<10","RZ.RecTDs<10","RZ.%Targets<10","RZ.RecTD%<10",
+                            "RZ.%RecTD<10","RZ.TeamTarget%<10","FPts(PPR)","FPts(1/2PPR)","FPts(STD)",
+                            "PPG(PPR)","PPG(1/2PPR)","PPG(STD)","PosRank(PPR)","PosRank(1/2PPR)",
+                            "PosRank(STD)","PPTarget(PPR)","PPTarget(1/2PPR)","PPTarget(STD)",
+                            "FPfromRec","FPfromRecYards","FPfromTDs","PPRMachine","YardMonster",
+                            "TDdepend"))
 
-# Define UI for application that draws a histogram
-ui <- dashboardPage(
-
-  dashboardHeader(title = "FF Statistics",
-                  tags$li(a(img(src = 'logo.png',height = "30px"),
-                            style = "padding-top:10px; padding-bottom:10px;"),
-                          class = "dropdown")),
-  
-  dashboardSidebar(
-    sidebarMenu(
-    menuItem("Welcome", tabName = "welcome", icon = icon("dashboard")),
-    menuItem("Start/Sit Tool", tabName = "tool", icon = icon("wrench")),
-    menuItem("Consistency", tabName = "consistency", icon = icon("table"),
-             menuSubItem("Consistency Data", tabName = "condata"),
-             menuSubItem("Consistency Charts", tabName = "conchart")),
-    menuItem("Weekly Data", tabName = "weekly", icon = icon("table"),
-             menuSubItem("Weekly Datatable","weeklydata"),
-             menuSubItem("Weekly Tool", "weeklytool"),
-             menuSubItem("Weekly Chart","weeklychart")),
-    menuItem("Yearly Data", tabName = "yearly", icon = icon("table"),
-             menuSubItem("Yearly Datatable", tabName = "yearlydata"),
-             menuSubItem("Yearly Chart",tabName = "yearlychart")),
-    menuItem("Defenses", tabName = "defense", icon = icon("table"),
-             menuSubItem("Team Data", tabName = "teamdefense"),
-             menuSubItem("Averages", tabName = "avgdefense")),
-    menuItem("Database", tabName = "database", icon = icon("database"),
-             menuSubItem("Quarterback", tabName = "data_qb"),
-             menuSubItem("Running Back", tabName = "data_rb"),
-             menuSubItem("Wide Receiver", tabName = "data_wr"),
-             menuSubItem("Tight End", tabName = "data_te")),
-    menuItem("Custom Fantasy Charts", tabName = "custom", icon = icon("wrench"),
-             menuSubItem("Offense", tabName = "customoff"),
-             menuSubItem("Defense", tabName = "customdef")),
-    menuItem("Z-Score Analysis", tabName = "zscore", icon = icon("bar-chart"),
-             menuSubItem("Datatable",tabName = "zdata"),
-             menuSubItem("Graphs",tabName = "zgraph")),
-    menuItem("Download Data", tabName = "download", icon = icon("download"))
-    )
-  ),
-  
-  dashboardBody(
-    tags$head(includeScript("analystics.js")),
-    tags$head(tags$style(HTML('
-                              .sidebar {
-                              color: #FFF;
-                              position: fixed;
-                              width: 230px;
-                              white-space: nowrap;
-                              overflow: visible;
-                              }
-                              .main-header {
-                              position: fixed;
-                              width:100%;
-                              }
-                              .content-wrapper, .right-side {
-                              min-height: 100%;
-                              background-color: #efefef;
-                              z-index: 800;
-                              }
-                              table.dataTable thead th, table.dataTable thead td {
-                              padding: 10px 18px;
-                              border-bottom: 1px solid #111;
-                              background: #ffffff;
-                              }
-                              .content {
-                              padding-top: 120px!important;
-                              }
-                              
-                              @media (min-width:768px) {
-                              .content {
-                              padding-top: 80px!important;
-                              }
-                              }
-
-                              @media (max-width:767px) {
-                              .skin-black .main-header>.logo {
-                              text-align: left;
-                              }
-                              }'))),
+body <- dashboardBody(
+  tags$head(includeScript("analystics.js")),
+  tags$head(tags$style(HTML('
+                            .sidebar {
+                            color: #FFF;
+                            position: fixed;
+                            width: 230px;
+                            white-space: nowrap;
+                            overflow: visible;
+                            }
+                            .main-header {
+                            position: fixed;
+                            width:100%;
+                            }
+                            .content-wrapper, .right-side {
+                            min-height: 100%;
+                            background-color: #efefef;
+                            z-index: 800;
+                            }
+                            table.dataTable thead th, table.dataTable thead td {
+                            padding: 10px 18px;
+                            border-bottom: 1px solid #111;
+                            background: #ffffff;
+                            }
+                            .content {
+                            padding-top: 120px!important;
+                            }
+                            
+                            @media (min-width:768px) {
+                            .content {
+                            padding-top: 80px!important;
+                            }
+                            }
+                            @media (max-width:767px) {
+                            .skin-black .main-header>.logo {
+                            text-align: left;
+                            }
+                            }'))),
     
-    tabItems(
-    tabItem(tabName = "welcome",
+  tabItems(
+    tabItem(tabName = "welcome", class = "active",
             h1("Welcome!"),
             "Welcome to FF Statistics! This website aims to be your one-stop-shop for fantasy football data and statistics! Each tab contains different, sortable data for your fantasy football data needs. 
             If you use the data, all we ask is you mention where you got it, from us! Unless otherwise noted, all formats are PPR and 4 point per passing TD.",
             br(),
             br(),
             strong("Start/Sit Tool"),
-              ("- Compares two players based on percentage each player hits X amount of points, with graphs!"),
+            ("- Compares two players based on percentage each player hits X amount of points, with graphs!"),
             br(),
             br(),
             strong("Consistency Data"),
-              ("- Two tabs:"),
+            ("- Two tabs:"),
             br(),
-              ("1) Datatable of each player's consistency stats based on average and standard deviation, and more!"),
+            ("1) Datatable of each player's consistency stats based on average and standard deviation, and more!"),
             br(),
-              ("2) Chart of each  player's average points/game since 2010 with error bars to show their standard deviation."),
+            ("2) Chart of each  player's average points/game since 2010 with error bars to show their standard deviation."),
             br(),
             br(),
             strong("Weekly Data"),
-              ("- Three tabs:"),
+            ("- Three tabs:"),
             br(),
-              ("1) Datatable of every player's weekly production (points and rank) since 2010."),
+            ("1) Datatable of every player's weekly production (points and rank) since 2010."),
             br(),
-              ("2) Datatable of every player's weekly points over a customizable weekly time frame."),
+            ("2) Datatable of every player's weekly points over a customizable weekly time frame."),
             br(),
-              ("3) Bar graph of each player's career weekly finishes (rank) since 2010."),
+            ("3) Bar graph of each player's career weekly finishes (rank) since 2010."),
             br(),
             br(),
             strong("Yearly Data"),
-              ("- Two tabs:"),
+            ("- Two tabs:"),
             br(),
-              ("1) Datatable of every player's yearly production (points and rank) since 2010."),
+            ("1) Datatable of every player's yearly production (points and rank) since 2010."),
             br(),
-              ("2) Chart and datatable of each player's yeary production (rank) since 2010."),
+            ("2) Chart and datatable of each player's yeary production (rank) since 2010."),
             br(),
             br(),
             strong("Defense Data"),
-              ("- Two seperate datatables:"),
+            ("- Two seperate datatables:"),
             br(),
-              ("1) Team Data - a datatable that breaks down statlines for the top fantasy scorer each defense allowed to each position (QB, RB, WR, TE) by week"),
+            ("1) Team Data - a datatable that breaks down statlines for the top fantasy scorer each defense allowed to each position (QB, RB, WR, TE) by week"),
             br(),
-              ("2) Averages - a datatable that shows the overall averages each defense allowed to each positions top fantasy scorer"),
+            ("2) Averages - a datatable that shows the overall averages each defense allowed to each positions top fantasy scorer"),
             br(),
             br(),
             strong("Database"),
-              ("- A massive, user-controlled fantasy football database in which you control the stats you want to see from the players you want to see."),
+            ("- A massive, user-controlled fantasy football database in which you control the stats you want to see from the players you want to see."),
             br(),
-              ("*Note: A '0' in the Round and Overall columns means Undrafted Free Agent*"),
+            ("*Note: A '0' in the Round and Overall columns means Undrafted Free Agent*"),
             br(),
             br(),
             strong("Custom Fantasy Charts"),
-              ("- A 100% customizable datatable for any fantasy scoring format for both offense and defense!"),
+            ("- A 100% customizable datatable for any fantasy scoring format for both offense and defense!"),
             br(),
             br(),
             strong("Z-Score Analysis"),
-              ("- Partnering with Tyler Ghee (@TylerGheeNFL), this tab uses z-scores to analyze player scoring and positional career arcs. 
-               Z-scores act similar to a percentile (usually between -3 and 3). The higher the z-score,
-               the better the player scored compared to the average player at his position. For specific questions, message Tyler or Addison on Twitter!"),
+            ("- Partnering with Tyler Ghee (@TylerGheeNFL), this tab uses z-scores to analyze player scoring and positional career arcs. 
+             Z-scores act similar to a percentile (usually between -3 and 3). The higher the z-score,
+             the better the player scored compared to the average player at his position. For specific questions, message Tyler or Addison on Twitter!"),
             br(),
             br(),
             strong("Download"),
-              ("- This tab gives users the ability to download any dataset from FF Statistics into Excel for personal use! Just select the data you want and hit Download!"),
+            ("- This tab gives users the ability to download any dataset from FF Statistics into Excel for personal use! Just select the data you want and hit Download!"),
             br(),
             br(),
             ("We are always looking to improve the site! If you notice any bugs or errors, or want to see other stats and data, message Addison Hayes (@amazehayes_roto) on Twitter or email ajh5737@gmail.com with suggestions, comments, or questions!"),
@@ -454,16 +422,16 @@ ui <- dashboardPage(
                                      value = 20, min = 0, max = 50, step = 0.1)) ),
             fluidRow(
               column(6, selectInput("con_playerA", "Choose Player A:",
-                                           unique(as.character(weekly_data$Player)),
-                                           selected = "Aaron Rodgers")),
+                                    unique(as.character(weekly_data$Player)),
+                                    selected = "Aaron Rodgers")),
               column(6, selectInput("con_playerB", "Choose Player B:",
-                                               unique(as.character(weekly_data$Player)),
-                                               selected = "Drew Brees"))),
+                                    unique(as.character(weekly_data$Player)),
+                                    selected = "Drew Brees"))),
             fluidRow(column(6, verbatimTextOutput("probA")),
                      column(6, verbatimTextOutput("probB"))),
             fluidRow(column(6,plotOutput("con_graphA")),
                      column(4,DT::dataTableOutput("con_tableB")))),
-      
+    
     tabItem(tabName = "condata",
             fluidRow(
               column(4,selectInput("pos","Position:",c("All",unique(
@@ -521,7 +489,7 @@ ui <- dashboardPage(
             br(),
             br(),
             fluidRow(column(10, style = "overflow-x: scroll", DT::dataTableOutput("con_dt")))
-            ),
+    ),
     
     tabItem(tabName = "weeklydata",
             fluidRow(
@@ -531,19 +499,19 @@ ui <- dashboardPage(
                                     c("Points","Rank"))),
               column(4, selectInput("pos_weekly", "Position:",c("All",unique(
                 as.character(total_weekly_data$Position)))))),
-              fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("weekly"))),
+            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("weekly"))),
     
     tabItem(tabName = "weeklytool",
             fluidPage(
-            fluidRow(
-              column(3, selectInput("wt_year","Choose Year:",
-                                    c("2017","2016","2015","2014","2013","2012","2011","2010"))),
-              column(3, selectInput("wt_weekA", "Choose Week:",
-                                    c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17"))),
-              column(3, selectInput("wt_weekB", "Choose Week:",
-                                    c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17"),
-                                    selected = "5"))),
-            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("weekly_tool")))),
+              fluidRow(
+                column(3, selectInput("wt_year","Choose Year:",
+                                      c("2017","2016","2015","2014","2013","2012","2011","2010"))),
+                column(3, selectInput("wt_weekA", "Choose Week:",
+                                      c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17"))),
+                column(3, selectInput("wt_weekB", "Choose Week:",
+                                      c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17"),
+                                      selected = "5"))),
+              fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("weekly_tool")))),
     
     tabItem(tabName = "weeklychart",
             fluidRow(
@@ -567,7 +535,7 @@ ui <- dashboardPage(
                                     c("Points","Rank"),selected = "Points")),
               column(4, selectInput("pos_yearly", "Position:",
                                     c("All", unique(as.character(yearly$pos)))))),
-              fluidRow(style = "overflow-x: scroll",DT::dataTableOutput("yearly"))),
+            fluidRow(style = "overflow-x: scroll",DT::dataTableOutput("yearly"))),
     
     tabItem(tabName = "yearlychart",
             fluidRow(
@@ -599,56 +567,56 @@ ui <- dashboardPage(
     
     tabItem(tabName = "data_qb", 
             fluidPage(
-            fluidRow(
-              column(4, selectInput("qb_vars","Select Column(s):", choices = list(
-                Player = c("Year","Player","Age","Season","Games"),
-                Draft = c("Round","Overall"),
-                Team = c("Team","HeadCoach","OffCoordinator","DefCoordinator","SOS","Oline"),
-                Passing = c("PassAtt","PassComp","Comp%","PassYards","PassTDs","INTs",
-                            "Att/G","Comp/G","YPA","YPG","TD/G","INT/G","TD/INT","TD%","INT%"),
-                Rushing = c("RushAtt","RushYards","RushTDs","RAtt/G","RYards/G","TotalTDs","ReturnYards"),
-                RedZone20 = c("RZ.PassAtt<20","RZ.PassComp<20","RZ.Comp%<20","RZ.TDs<20","RZ.INTs<20",
-                              "RZ.TDPer<20","%PassTDs<20","RZ.INT%<20","%INTs<20","RZ.TD/INT<20"),
-                RedZone10 = c("RZ.PassAtt<10","RZ.PassComp<10","RZ.Comp%<10","RZ.TDs<10","RZ.INTs<10",
-                              "RZ.TD%<10","%PassTDs<10","RZ.INT%<10","%INTs<10","RZ.TD/INT<10"),
-                Fantasy = c("FPts(4pt/TD)","FPts(6pt/TD)","PPG(4pt/TD)","PPG(6pt/TD)",
-                            "PPAtt(4pt/TD)","PPAtt(6pt/TD)","PosRank(4pt/TD)","PosRank(6pt/TD)",
-                            "FPfromYards","FPfromTDs","FPfromRush","YardMonster","TDdepend","MobileQB")
-              ),multiple = TRUE,selected = c("Year","Player","Team","Games","PassAtt","PassComp",
-                                             "Comp%","PassYards","PassTDs","INTs")))),
-            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("qbdata")))),
+              fluidRow(
+                column(4, selectInput("qb_vars","Select Column(s):", choices = list(
+                  Player = c("Year","Player","Age","Season","Games"),
+                  Draft = c("Round","Overall"),
+                  Team = c("Team","HeadCoach","OffCoordinator","DefCoordinator","SOS","Oline"),
+                  Passing = c("PassAtt","PassComp","Comp%","PassYards","PassTDs","INTs",
+                              "Att/G","Comp/G","YPA","YPG","TD/G","INT/G","TD/INT","TD%","INT%"),
+                  Rushing = c("RushAtt","RushYards","RushTDs","RAtt/G","RYards/G","TotalTDs","ReturnYards"),
+                  RedZone20 = c("RZ.PassAtt<20","RZ.PassComp<20","RZ.Comp%<20","RZ.TDs<20","RZ.INTs<20",
+                                "RZ.TDPer<20","%PassTDs<20","RZ.INT%<20","%INTs<20","RZ.TD/INT<20"),
+                  RedZone10 = c("RZ.PassAtt<10","RZ.PassComp<10","RZ.Comp%<10","RZ.TDs<10","RZ.INTs<10",
+                                "RZ.TD%<10","%PassTDs<10","RZ.INT%<10","%INTs<10","RZ.TD/INT<10"),
+                  Fantasy = c("FPts(4pt/TD)","FPts(6pt/TD)","PPG(4pt/TD)","PPG(6pt/TD)",
+                              "PPAtt(4pt/TD)","PPAtt(6pt/TD)","PosRank(4pt/TD)","PosRank(6pt/TD)",
+                              "FPfromYards","FPfromTDs","FPfromRush","YardMonster","TDdepend","MobileQB")
+                ),multiple = TRUE,selected = c("Year","Player","Team","Games","PassAtt","PassComp",
+                                               "Comp%","PassYards","PassTDs","INTs")))),
+              fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("qbdata")))),
     
     tabItem(tabName = "data_rb",
             fluidPage(
-            fluidRow(
-              column(4, selectInput("rb_vars","Select Column(s):", choices = list(
-                Player = c("Year","Player","Age","Season","Games"),
-                Draft = c("Round","Overall"),
-                Team = c("Team","HeadCoach","OffCoordinator","DefCoordinator","SOS","Oline"),
-                Rushing = c("RushAtt","RushYards","YPC","RushTDs","RuAtt/G","RuYPG","RuTD%"),
-                Receiving = c("Targets","Receptions","Reception%","RecYards","RecTDs","Targets/G",
-                              "Receptions/G","YPR","ReYPG","RecTD%"),
-                Total = c("Touches","TotalYards","TotalTDs","YPT","TotalYPG","TotalTD%","ReturnYards"),
-                RedZone20 = c("RZ.RushAtt<20","RZ.RushYards<20","RZ.RushTDs<20","RZ.%RushAtt<20",
-                              "RZ.RushTD%<20","RZ.%RushTD<20","RZ.Targets<20","RZ.Receptions<20",
-                              "RZ.Rec%<20","RZ.RecYards<20","RZ.RecTDs<20","RZ.%Targets<20",
-                              "RZ.RecTD%<20","RZ.%RecTD<20","RZ.Touches<20","RZ.TotalYards<20",
-                              "RZ.TotalTDs<20","RZ.%Touches<20","RZ.TotalTD%<20","RZ.%TotalTD<20"),
-                RedZone10 = c("RZ.RushAtt<10","RZ.RushYards<10","RZ.RushTDs<10","RZ.%RushAtt<10",
-                              "RZ.RushTD%<10","RZ.%RushTD<10","RZ.Targets<10","RZ.Receptions<10",
-                              "RZ.Rec%<10","RZ.RecYards<10","RZ.RecTDs<10","RZ.%Targets<10",
-                              "RZ.RecTD%<10","RZ.%RecTD<10","RZ.Touches<10","RZ.TotalYards<10",
-                              "RZ.TotalTDs<10","RZ.%Touches<10","RZ.TotalTD%<10","RZ.%TotalTD<10"),
-                RedZone5 = c("RZ.RushAtt<5","RZ.RushYards<5","RZ.RushTDs<5","RZ.%RushAtt<5",
-                             "RZ.RushTD%<5","RZ.%RushTD<5"),
-                Fantasy = c("FPts(PPR)","FPts(1/2PPR)","FPts(STD)","PPG(PPR)","PPG(1/2PPR)",
-                            "PPG(STD)","PosRank(PPR)","PosRank(1/2PPR)","PosRank(STD)",
-                            "PPTouch(PPR)","PPTouch(1/2PPR)","PPTouch(STD)","FPfromRec",
-                            "FPfromRuYards","FPfromTotalTDs","PPRMachine","YardMonster","TDdepend")
-              ),multiple = TRUE,selected = c("Year","Player","Team","Games","RushAtt","RushYards",
-                                             "YPC","RushTDs")))),
-            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("rbdata")))),
-
+              fluidRow(
+                column(4, selectInput("rb_vars","Select Column(s):", choices = list(
+                  Player = c("Year","Player","Age","Season","Games"),
+                  Draft = c("Round","Overall"),
+                  Team = c("Team","HeadCoach","OffCoordinator","DefCoordinator","SOS","Oline"),
+                  Rushing = c("RushAtt","RushYards","YPC","RushTDs","RuAtt/G","RuYPG","RuTD%"),
+                  Receiving = c("Targets","Receptions","Reception%","RecYards","RecTDs","Targets/G",
+                                "Receptions/G","YPR","ReYPG","RecTD%"),
+                  Total = c("Touches","TotalYards","TotalTDs","YPT","TotalYPG","TotalTD%","ReturnYards"),
+                  RedZone20 = c("RZ.RushAtt<20","RZ.RushYards<20","RZ.RushTDs<20","RZ.%RushAtt<20",
+                                "RZ.RushTD%<20","RZ.%RushTD<20","RZ.Targets<20","RZ.Receptions<20",
+                                "RZ.Rec%<20","RZ.RecYards<20","RZ.RecTDs<20","RZ.%Targets<20",
+                                "RZ.RecTD%<20","RZ.%RecTD<20","RZ.Touches<20","RZ.TotalYards<20",
+                                "RZ.TotalTDs<20","RZ.%Touches<20","RZ.TotalTD%<20","RZ.%TotalTD<20"),
+                  RedZone10 = c("RZ.RushAtt<10","RZ.RushYards<10","RZ.RushTDs<10","RZ.%RushAtt<10",
+                                "RZ.RushTD%<10","RZ.%RushTD<10","RZ.Targets<10","RZ.Receptions<10",
+                                "RZ.Rec%<10","RZ.RecYards<10","RZ.RecTDs<10","RZ.%Targets<10",
+                                "RZ.RecTD%<10","RZ.%RecTD<10","RZ.Touches<10","RZ.TotalYards<10",
+                                "RZ.TotalTDs<10","RZ.%Touches<10","RZ.TotalTD%<10","RZ.%TotalTD<10"),
+                  RedZone5 = c("RZ.RushAtt<5","RZ.RushYards<5","RZ.RushTDs<5","RZ.%RushAtt<5",
+                               "RZ.RushTD%<5","RZ.%RushTD<5"),
+                  Fantasy = c("FPts(PPR)","FPts(1/2PPR)","FPts(STD)","PPG(PPR)","PPG(1/2PPR)",
+                              "PPG(STD)","PosRank(PPR)","PosRank(1/2PPR)","PosRank(STD)",
+                              "PPTouch(PPR)","PPTouch(1/2PPR)","PPTouch(STD)","FPfromRec",
+                              "FPfromRuYards","FPfromTotalTDs","PPRMachine","YardMonster","TDdepend")
+                ),multiple = TRUE,selected = c("Year","Player","Team","Games","RushAtt","RushYards",
+                                               "YPC","RushTDs")))),
+              fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("rbdata")))),
+    
     tabItem(tabName = "data_wr",
             fluidPage(
               fluidRow(
@@ -686,7 +654,7 @@ ui <- dashboardPage(
                   RedZone20 = c("RZ.Targets<20","RZ.Receptions<20","RZ.Rec%<20","RZ.RecTDs<20",
                                 "RZ.%Targets<20","RZ.RecTD%<20","RZ.%RecTD<20","RZ.TeamTarget%<20"),
                   RedZone10 = c("RZ.Targets<10","RZ.Receptions<10","RZ.Rec%<10","RZ.RecTDs<10",
-                                "RZ.%Targets<10","RZ.RecTD%<10","RZ.%RecTD<10","RZ.TeamTarget%<10"),
+                                "RZ.%Targets<10","RZ.RecTD%<10","RZ.%RecTD<10","RZ.TeamTarget%<10."),
                   Fantasy = c("FPts(PPR)","FPts(1/2PPR)","FPts(STD)","PPG(PPR)","PPG(1/2PPR)",
                               "PPG(STD)","PosRank(PPR)","PosRank(1/2PPR)","PosRank(STD)",
                               "PPTarget(PPR)","PPTarget(1/2PPR)","PPTarget(STD)","FPfromRec",
@@ -700,29 +668,29 @@ ui <- dashboardPage(
               column(4, selectInput("offyear_pos","Select Position:",
                                     c(unique(as.character(offyear$Pos)),"Flex")))),
             fluidRow(
-             column(2, numericInput("off_numberA", "Points Per Pass Attempt:",
+              column(2, numericInput("off_numberA", "Points Per Pass Attempt:",
                                      value = 0, min = 0, max = 1, step = 0.01)),
-             column(2, numericInput("off_numberB", "Points Per Pass Compl:",
-                                    value = 0, min = 0, max = 1, step = 0.01)),
-             column(2, numericInput("off_numberC", "Points Per Pass Yard:",
-                                    value = 0.04, min = 0, max = 1, step = 0.01)),
-             column(2, numericInput("off_numberD", "Points Per Pass TD:",
-                                    value = 4, min = 0, max = 10, step = 1)),
-             column(2, numericInput("off_numberE", "Points Per Interception:",
-                                    value = -2, min = -5, max = 5, step = 1))),
+              column(2, numericInput("off_numberB", "Points Per Pass Compl:",
+                                     value = 0, min = 0, max = 1, step = 0.01)),
+              column(2, numericInput("off_numberC", "Points Per Pass Yard:",
+                                     value = 0.04, min = 0, max = 1, step = 0.01)),
+              column(2, numericInput("off_numberD", "Points Per Pass TD:",
+                                     value = 4, min = 0, max = 10, step = 1)),
+              column(2, numericInput("off_numberE", "Points Per Interception:",
+                                     value = -2, min = -5, max = 5, step = 1))),
             fluidRow(
-             column(2, numericInput("off_numberF", "Points Per Carry:",
+              column(2, numericInput("off_numberF", "Points Per Carry:",
                                      value = 0, min = 0, max = 1, step = 0.01)),
-             column(2, numericInput("off_numberG", "Points Per Reception:",
-                                    value = 1, min = 0, max = 5, step = 0.1)),
-             column(2, numericInput("off_numberJ", "TE PPR Premium:",
-                                    value = 1, min = 0, max = 5, step = 0.1)),
-             column(2, numericInput("off_numberH", "Points Per Rush/Rec Yard:",
-                                    value = 0.1, min = 0, max = 5, step = 0.1)),
-             column(2, numericInput("off_numberI", "Points Per Rush/Rec TD:",
-                                    value = 6, min = 0, max = 10, step = 1)),
-             column(2, numericInput("off_numberK", "Points Per Return Yard:",
-                                    value = 0, min = 0, max = 1, step = 0.01))),
+              column(2, numericInput("off_numberG", "Points Per Reception:",
+                                     value = 1, min = 0, max = 5, step = 0.1)),
+              column(2, numericInput("off_numberJ", "TE PPR Premium:",
+                                     value = 1, min = 0, max = 5, step = 0.1)),
+              column(2, numericInput("off_numberH", "Points Per Rush/Rec Yard:",
+                                     value = 0.1, min = 0, max = 5, step = 0.1)),
+              column(2, numericInput("off_numberI", "Points Per Rush/Rec TD:",
+                                     value = 6, min = 0, max = 10, step = 1)),
+              column(2, numericInput("off_numberK", "Points Per Return Yard:",
+                                     value = 0, min = 0, max = 1, step = 0.01))),
             fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("offyearly"))),
     
     tabItem(tabName = "customdef",
@@ -779,12 +747,93 @@ ui <- dashboardPage(
                                                  "Defenses (Avg)","QB Database","RB Database",
                                                  "WR Database","TE Database","IDP Database","ZScore")))),
             fluidRow(column(4, downloadButton("downloadData", "Download"))))
-    )
-)
-)
+            )
+            )
 
-# Define server logic
+
+ui <- dashboardPage(
+        
+        dashboardHeader(title = "FF Statistics",
+                        tags$li(a(img(src = 'logo.png',height = "30px"),
+                                  style = "padding-top:10px; padding-bottom:10px;"),
+                                  class = "dropdown")),
+        
+        dashboardSidebar(
+          sidebarMenu(
+            menuItem("Welcome", tabName = "welcome", icon = icon("dashboard")),
+            menuItem("Start/Sit Tool", tabName = "tool", icon = icon("wrench")),
+            menuItem("Consistency", tabName = "consistency", icon = icon("table"),
+                     menuSubItem("Consistency Data", tabName = "condata"),
+                     menuSubItem("Consistency Charts", tabName = "conchart")),
+            menuItem("Weekly Data", tabName = "weekly", icon = icon("table"),
+                     menuSubItem("Weekly Datatable","weeklydata"),
+                     menuSubItem("Weekly Tool", "weeklytool"),
+                     menuSubItem("Weekly Chart","weeklychart")),
+            menuItem("Yearly Data", tabName = "yearly", icon = icon("table"),
+                     menuSubItem("Yearly Datatable", tabName = "yearlydata"),
+                     menuSubItem("Yearly Chart",tabName = "yearlychart")),
+            menuItem("Defenses", tabName = "defense", icon = icon("table"),
+                     menuSubItem("Team Data", tabName = "teamdefense"),
+                     menuSubItem("Averages", tabName = "avgdefense")),
+            menuItem("Database", tabName = "database", icon = icon("database"),
+                     menuSubItem("Quarterback", tabName = "data_qb"),
+                     menuSubItem("Running Back", tabName = "data_rb"),
+                     menuSubItem("Wide Receiver", tabName = "data_wr"),
+                     menuSubItem("Tight End", tabName = "data_te")),
+            menuItem("Custom Fantasy Charts", tabName = "custom", icon = icon("wrench"),
+                     menuSubItem("Offense", tabName = "customoff"),
+                     menuSubItem("Defense", tabName = "customdef")),
+            menuItem("Z-Score Analysis", tabName = "zscore", icon = icon("bar-chart"),
+                     menuSubItem("Datatable",tabName = "zdata"),
+                     menuSubItem("Graphs",tabName = "zgraph")),
+            menuItem("Download Data", tabName = "download", icon = icon("download"))
+          )
+        ),
+        
+        body = uiOutput("app"))
+
+
 server <- function(input, output) {
+  
+  credentials <- list("test"="123", "guest"="fantasy")
+  
+  USER <- reactiveValues(Logged = FALSE)
+  
+  observeEvent(input$.login, {
+    if (isTRUE(credentials[[input$.username]]==input$.password)){
+      USER$Logged <- TRUE
+    } else {
+      show("message")
+      output$message = renderText("Invalid user name or password")
+      delay(2000, hide("message", anim = TRUE, animType = "fade"))
+    }
+  })
+  
+  output$app <- renderUI(
+    if (!isTRUE(USER$Logged)) {
+      dashboardBody(
+        fluidPage(
+        column(width=4, offset = 4,div(style = "height:150px"),
+                      wellPanel(id = "login",
+                                textInput(".username", "Username:"),
+                                passwordInput(".password", "Password:"),
+                                div(actionButton(".login", "Log in"), style="text-align: center;"),
+                                br(),
+                                "To login as a Guest:",
+                                br(),
+                                "Username: guest",
+                                br(),
+                                "Password: fantasy"
+                      ),
+                      textOutput("message")
+      )))
+    } 
+    
+    else {
+      body
+      }
+  )
+  
   
   #Print Welcome Tab
   output$welcometext <- ({
@@ -1201,7 +1250,7 @@ server <- function(input, output) {
   })
   
   output$con_graphA <- renderPlot({
-
+    
     if(input$format == "PPR (4pt/TD)") {
       x <- as.matrix(weekly_data[1576:2098,2:35])
       y <- weekly_data[1576:2098,1]
@@ -1249,84 +1298,84 @@ server <- function(input, output) {
   
   output$con_tableB <- renderDataTable({
     DT::datatable({
-    
-    if(input$format == "PPR (4pt/TD)") {
-      x <- as.matrix(weekly_data[1576:2098,2:35])
-      y <- weekly_data[1576:2098,1]
-      rownames(x) <- y
-      p1 <- x[(input$con_playerA),]
-      p1 <- as.numeric(p1)
-      p2 <- x[(input$con_playerB),]
-      p2 <- as.numeric(p2)
-      z <- t(x)
-      rownames(z) <- c("Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
-                       "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17",
-                       "Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
-                       "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17")
-      last8A <- z[c(17,16,15,14,13,12,11,10),input$con_playerA]
-      last8B <- z[c(17,16,15,14,13,12,11,10),input$con_playerB]
-      last8C <- cbind(last8A,last8B)
-      colnames(last8C) <- c(input$con_playerA,input$con_playerB)
-    }
-    
-    if(input$format == "PPR (6pt/TD)") {
-      x <- as.matrix(weekly_data[1051:1573,2:35])
-      y <- weekly_data[1576:2098,1]
-      rownames(x) <- y
-      p1 <- x[(input$con_playerA),]
-      p1 <- as.numeric(p1)
-      p2 <- x[(input$con_playerB),]
-      p2 <- as.numeric(p2)
-      z <- t(x)
-      rownames(z) <- c("Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
-                       "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17",
-                       "Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
-                       "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17")
-      last8A <- z[c(17,16,15,14,13,12,11,10),input$con_playerA]
-      last8B <- z[c(17,16,15,14,13,12,11,10),input$con_playerB]
-      last8C <- cbind(last8A,last8B)
-      colnames(last8C) <- c(input$con_playerA,input$con_playerB)
-    }
-    
-    if(input$format == "1/2PPR") {
-      x <- as.matrix(weekly_data[1:523,2:35])
-      y <- weekly_data[1576:2098,1]
-      rownames(x) <- y
-      p1 <- x[(input$con_playerA),]
-      p1 <- as.numeric(p1)
-      p2 <- x[(input$con_playerB),]
-      p2 <- as.numeric(p2)
-      z <- t(x)
-      rownames(z) <- c("Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
-                       "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17",
-                       "Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
-                       "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17")
-      last8A <- z[c(17,16,15,14,13,12,11,10),input$con_playerA]
-      last8B <- z[c(17,16,15,14,13,12,11,10),input$con_playerB]
-      last8C <- cbind(last8A,last8B)
-      colnames(last8C) <- c(input$con_playerA,input$con_playerB)
-    }
-    
-    if(input$format == "Standard") {
-      x <- as.matrix(weekly_data[526:1048,2:35])
-      y <- weekly_data[1576:2098,1]
-      rownames(x) <- y
-      p1 <- x[(input$con_playerA),]
-      p1 <- as.numeric(p1)
-      p2 <- x[(input$con_playerB),]
-      p2 <- as.numeric(p2)
-      z <- t(x)
-      rownames(z) <- c("Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
-                       "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17",
-                       "Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
-                       "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17")
-      last8A <- z[c(17,16,15,14,13,12,11,10),input$con_playerA]
-      last8B <- z[c(17,16,15,14,13,12,11,10),input$con_playerB]
-      last8C <- cbind(last8A,last8B)
-      colnames(last8C) <- c(input$con_playerA,input$con_playerB)
-    }
-    
-    last8C
+      
+      if(input$format == "PPR (4pt/TD)") {
+        x <- as.matrix(weekly_data[1576:2098,2:35])
+        y <- weekly_data[1576:2098,1]
+        rownames(x) <- y
+        p1 <- x[(input$con_playerA),]
+        p1 <- as.numeric(p1)
+        p2 <- x[(input$con_playerB),]
+        p2 <- as.numeric(p2)
+        z <- t(x)
+        rownames(z) <- c("Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
+                         "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17",
+                         "Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
+                         "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17")
+        last8A <- z[c(17,16,15,14,13,12,11,10),input$con_playerA]
+        last8B <- z[c(17,16,15,14,13,12,11,10),input$con_playerB]
+        last8C <- cbind(last8A,last8B)
+        colnames(last8C) <- c(input$con_playerA,input$con_playerB)
+      }
+      
+      if(input$format == "PPR (6pt/TD)") {
+        x <- as.matrix(weekly_data[1051:1573,2:35])
+        y <- weekly_data[1576:2098,1]
+        rownames(x) <- y
+        p1 <- x[(input$con_playerA),]
+        p1 <- as.numeric(p1)
+        p2 <- x[(input$con_playerB),]
+        p2 <- as.numeric(p2)
+        z <- t(x)
+        rownames(z) <- c("Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
+                         "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17",
+                         "Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
+                         "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17")
+        last8A <- z[c(17,16,15,14,13,12,11,10),input$con_playerA]
+        last8B <- z[c(17,16,15,14,13,12,11,10),input$con_playerB]
+        last8C <- cbind(last8A,last8B)
+        colnames(last8C) <- c(input$con_playerA,input$con_playerB)
+      }
+      
+      if(input$format == "1/2PPR") {
+        x <- as.matrix(weekly_data[1:523,2:35])
+        y <- weekly_data[1576:2098,1]
+        rownames(x) <- y
+        p1 <- x[(input$con_playerA),]
+        p1 <- as.numeric(p1)
+        p2 <- x[(input$con_playerB),]
+        p2 <- as.numeric(p2)
+        z <- t(x)
+        rownames(z) <- c("Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
+                         "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17",
+                         "Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
+                         "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17")
+        last8A <- z[c(17,16,15,14,13,12,11,10),input$con_playerA]
+        last8B <- z[c(17,16,15,14,13,12,11,10),input$con_playerB]
+        last8C <- cbind(last8A,last8B)
+        colnames(last8C) <- c(input$con_playerA,input$con_playerB)
+      }
+      
+      if(input$format == "Standard") {
+        x <- as.matrix(weekly_data[526:1048,2:35])
+        y <- weekly_data[1576:2098,1]
+        rownames(x) <- y
+        p1 <- x[(input$con_playerA),]
+        p1 <- as.numeric(p1)
+        p2 <- x[(input$con_playerB),]
+        p2 <- as.numeric(p2)
+        z <- t(x)
+        rownames(z) <- c("Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
+                         "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17",
+                         "Week 1","Week 2","Week 3","Week 4","Week 5","Week 6","Week 7","Week 8","Week 9","Week 10",
+                         "Week 11","Week 12","Week 13","Week 14","Week 15","Week 16","Week 17")
+        last8A <- z[c(17,16,15,14,13,12,11,10),input$con_playerA]
+        last8B <- z[c(17,16,15,14,13,12,11,10),input$con_playerB]
+        last8C <- cbind(last8A,last8B)
+        colnames(last8C) <- c(input$con_playerA,input$con_playerB)
+      }
+      
+      last8C
       
     }, options = list(dom = 't'))
     
@@ -1759,7 +1808,7 @@ server <- function(input, output) {
     }
     
     DT::datatable({
-    try2 <- try2[order(-try2$TotalFPts),]
+      try2 <- try2[order(-try2$TotalFPts),]
     },rownames = FALSE, filter = "top")
   })
   
@@ -1792,7 +1841,7 @@ server <- function(input, output) {
   output$yearly_graph <- renderPlot({
     
     if(input$player_yearlyA == "None" & input$player_yearlyB == "None" & input$player_yearlyC == "None"){
-     paste("Please select a player...")
+      paste("Please select a player...")
     }
     
     if(input$player_yearlyA != "None" & input$player_yearlyB == "None" & input$player_yearlyC == "None"){
@@ -2012,7 +2061,7 @@ server <- function(input, output) {
       test <- t(x)
       y <- test[,c(input$player_yearlyA,input$player_yearlyB,input$player_yearlyC)]
     }
-
+    
     DT::datatable({
       y
     }, options = list(dom = 't'))
@@ -2038,8 +2087,8 @@ server <- function(input, output) {
         team_defense <- defenses_te[defenses$Team == input$def_team,]
       }
       
-    team_defense  
-    
+      team_defense  
+      
     },rownames = FALSE, filter = "top", options = list(pageLength = 20))
   })
   
@@ -2062,7 +2111,7 @@ server <- function(input, output) {
         avg_defense <- defenses_avg_te
       }
       
-    avg_defense 
+      avg_defense 
       
     },rownames = FALSE, filter = "top", options = list(pageLength = 35))
   })
@@ -2071,13 +2120,13 @@ server <- function(input, output) {
   #QB Database
   output$qbdata <- DT::renderDataTable({
     DT::datatable(
-    
+      
       if(!is.null(input$qb_vars)) {
         qbdata[,input$qb_vars, drop = FALSE]
       }
       , rownames = FALSE, filter = "top", 
       options = list(lengthMenu = c(10,25,50,100))
-
+      
     )
   })
   
@@ -2093,7 +2142,7 @@ server <- function(input, output) {
       
     )
   })
-    
+  
   #WR Database
   output$wrdata <- DT::renderDataTable({
     DT::datatable(
@@ -2121,7 +2170,7 @@ server <- function(input, output) {
     ) 
     
   })
-
+  
   output$offyearly <- DT::renderDataTable({
     
     fanptsqb <- offyearqb$FP + (offyearqb$PassAtt*input$off_numberA) + (offyearqb$PassComp*input$off_numberB) +
@@ -2166,7 +2215,7 @@ server <- function(input, output) {
       if(input$offyear_pos == "QB") {
         offyearly <- cbind(offyearqb2, fanptsqb, avgqb)
         offyearly <- setNames(offyearly, c("Year","Player","Team","Games","PassAtt","PassComp","Comp%","PassYards",
-                                       "PassTDs","INTs","RushAtt","RushYards","RushTDs","FanPts","Avg"))
+                                           "PassTDs","INTs","RushAtt","RushYards","RushTDs","FanPts","Avg"))
       }
       
       if(input$offyear_pos == "RB") {
@@ -2192,8 +2241,8 @@ server <- function(input, output) {
         offyearly <- setNames(offyearly, c("Year","Player","Pos","Team","Games","RushAtt","RushYards","YPC","RushTDs","Targets",
                                            "Receptions","Reception%","RecYards","RecTDs","ReturnYards","FanPts","Avg"))
       }
-
-    offyearly[order(c(-offyearly$Year,-offyearly$FanPts)),]
+      
+      offyearly[order(c(-offyearly$Year,-offyearly$FanPts)),]
       
     }, rownames = FALSE, filter = "top", options = list(lengthMenu = c(12,24,36,50,100)))
     
@@ -2244,39 +2293,39 @@ server <- function(input, output) {
       ((idpyear$Safeties*input$def_numberH)-(idpyear$Safeties*2)) +
       ((idpyear$TDs*input$def_numberI)-(idpyear$TDs*6)) + (idpyear$ReturnYards*input$def_numberJ)
     avg <- round(fanpts/idpyear$Games,2)
-      
-      if(input$defyear_pos == "DL") {
-        defyearly <- cbind(idpyeardl2,fanptsdl,avgdl)
-        defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
-                                           "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
-                                           "TDs","ReturnYards","FanPts","Avg"))
-      }
-      
-      if(input$defyear_pos == "DB") {
-        defyearly <- cbind(idpyeardb2,fanptsdb,avgdb)
-        defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
-                                           "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
-                                           "TDs","ReturnYards","FanPts","Avg"))
-      }
-      
-      if(input$defyear_pos == "LB") {
-        defyearly <- cbind(idpyearlb2,fanptslb,avglb)
-        defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
-                                           "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
-                                           "TDs","ReturnYards","FanPts","Avg"))
-      }
-      
-      if(input$defyear_pos == "All") {
-        defyearly <- cbind(idpyear2,fanpts,avg)
-        defyearly <- setNames(defyearly, c("Year","Player","Pos","Team","Games","Tackles","Assists",
-                                           "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
-                                           "TDs","ReturnYards","FanPts","Avg"))
-      }
-      
+    
+    if(input$defyear_pos == "DL") {
+      defyearly <- cbind(idpyeardl2,fanptsdl,avgdl)
+      defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
+                                         "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
+                                         "TDs","ReturnYards","FanPts","Avg"))
+    }
+    
+    if(input$defyear_pos == "DB") {
+      defyearly <- cbind(idpyeardb2,fanptsdb,avgdb)
+      defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
+                                         "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
+                                         "TDs","ReturnYards","FanPts","Avg"))
+    }
+    
+    if(input$defyear_pos == "LB") {
+      defyearly <- cbind(idpyearlb2,fanptslb,avglb)
+      defyearly <- setNames(defyearly, c("Year","Player","Team","Games","Tackles","Assists",
+                                         "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
+                                         "TDs","ReturnYards","FanPts","Avg"))
+    }
+    
+    if(input$defyear_pos == "All") {
+      defyearly <- cbind(idpyear2,fanpts,avg)
+      defyearly <- setNames(defyearly, c("Year","Player","Pos","Team","Games","Tackles","Assists",
+                                         "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
+                                         "TDs","ReturnYards","FanPts","Avg"))
+    }
+    
     DT::datatable({
-    defyearly <- defyearly[order(c(-defyearly$Year,-defyearly$FanPts)),]
+      defyearly <- defyearly[order(c(-defyearly$Year,-defyearly$FanPts)),]
     }, rownames = FALSE,filter = "top", options = list(lengthMenu = c(12,24,36,50,100)))
-
+    
   })
   
   output$zscoretable <- renderDataTable({
@@ -2399,6 +2448,4 @@ server <- function(input, output) {
   
 }
 
-# Run the application 
 shinyApp(ui = ui, server = server)
-
