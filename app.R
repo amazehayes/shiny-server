@@ -1,5 +1,3 @@
-# FF Statistics
-
 library(shiny)
 library(shinydashboard)
 library(DT)
