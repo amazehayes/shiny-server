@@ -277,7 +277,7 @@ tedata <- transform(tedata,
                     FP.from.Rec. = as.numeric(sub("%","",FP.from.Rec.)),
                     FP.from.Yards = as.numeric(sub("%","",FP.from.Yards)),
                     FP.from.TDs = as.numeric(sub("%","",FP.from.TDs)))
-test <- read.csv("TEdata.csv", header = FALSE)
+test <- read.csv("TEdata.csv")
 tedata2 <- cbind(tedata,test)
 colnames(tedata2) <- c("Year","Player","Age","Season","Round","Overall",
                        "Team","HeadCoach","OffCoordinator","DefCoordinator","SOS",
