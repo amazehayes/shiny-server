@@ -277,21 +277,19 @@ tedata <- transform(tedata,
                     FP.from.Rec. = as.numeric(sub("%","",FP.from.Rec.)),
                     FP.from.Yards = as.numeric(sub("%","",FP.from.Yards)),
                     FP.from.TDs = as.numeric(sub("%","",FP.from.TDs)))
-test <- read.csv("TEdata.csv")
-tedata2 <- cbind(tedata,test)
-colnames(tedata2) <- c("Year","Player","Age","Season","Round","Overall",
-                       "Team","HeadCoach","OffCoordinator","DefCoordinator","SOS",
-                       "Oline","Games","Targets","Receptions","Reception%","RecYards",
-                       "RecTDs","Targets/G","MarketShare","Receptions/G","YPTarget","YPR",
-                       "RecYPG","RecTD%","ReturnYards","RZ.Targets<20","RZ.Receptions<20",
-                       "RZ.Rec%<20","RZ.RecTDs<20","RZ.%Targets<20","RZ.RecTD%<20",
-                       "RZ.%RecTD<20","RZ.TeamTarget%<20","RZ.Targets<10","RZ.Receptions<10",
-                       "RZ.Rec%<10","RZ.RecTDs<10","RZ.%Targets<10","RZ.RecTD%<10",
-                       "RZ.%RecTD<10","FPts(PPR)","FPts(1/2PPR)","FPts(STD)",
-                       "PPG(PPR)","PPG(1/2PPR)","PPG(STD)","PosRank(PPR)","PosRank(1/2PPR)",
-                       "PosRank(STD)","PPTarget(PPR)","PPTarget(1/2PPR)","PPTarget(STD)",
-                       "FPfromRec","FPfromRecYards","FPfromTDs","PPRMachine","YardMonster",
-                       "TDdepend","RZ.TeamTarget%<10")
+colnames(tedata) <- c("Year","Player","Age","Season","Round","Overall",
+                      "Team","HeadCoach","OffCoordinator","DefCoordinator","SOS",
+                      "Oline","Games","Targets","Receptions","Reception%","RecYards",
+                      "RecTDs","Targets/G","MarketShare","Receptions/G","YPTarget","YPR",
+                      "RecYPG","RecTD%","ReturnYards","RZ.Targets<20","RZ.Receptions<20",
+                      "RZ.Rec%<20","RZ.RecTDs<20","RZ.%Targets<20","RZ.RecTD%<20",
+                      "RZ.%RecTD<20","RZ.TeamTarget%<20","RZ.Targets<10","RZ.Receptions<10",
+                      "RZ.Rec%<10","RZ.RecTDs<10","RZ.%Targets<10","RZ.RecTD%<10",
+                      "RZ.%RecTD<10","RZ.TeamTarget%<10","FPts(PPR)","FPts(1/2PPR)","FPts(STD)",
+                      "PPG(PPR)","PPG(1/2PPR)","PPG(STD)","PosRank(PPR)","PosRank(1/2PPR)",
+                      "PosRank(STD)","PPTarget(PPR)","PPTarget(1/2PPR)","PPTarget(STD)",
+                      "FPfromRec","FPfromRecYards","FPfromTDs","PPRMachine","YardMonster",
+                      "TDdepend")
 
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
@@ -2117,7 +2115,7 @@ server <- function(input, output) {
     DT::datatable(
       
       if(!is.null(input$te_vars)) {
-        tedata2[,input$te_vars, drop = FALSE]
+        tedata[,input$te_vars, drop = FALSE]
       }
       , rownames = FALSE,filter = "top",
       options = list(lengthMenu = c(10,25,50,100))
