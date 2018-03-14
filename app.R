@@ -2,6 +2,13 @@ library(shiny)
 library(shinydashboard)
 library(DT)
 
+url_thrive <- a("Thrive Fantasy", href="http://bit.ly/A_Hayes", target="_blank")
+url_patreon <- a("FF Statistics Patreon", href="https://www.patreon.com/ffstatistics", target="_blank")
+logo_dynastyer <- tags$a(img(src="dynastyer.png",height="150px",width="150px"),href="https://www.dynastyer.com/")
+logo_dff <- tags$a(img(src="dff.png",height="150px",width="150px"),href="https://dynastyfootballfactory.com/")
+logo_rotoballer <- tags$a(img(src="rotoballer.png",height="150px",width="150px"),href="https://www.rotoballer.com/")
+
+
 zscores <- read.csv("zscores.csv")
 colnames(zscores) <- c("Year","Player","Age","Season","FanPts","ZScore","",
                        "Year","Player","Age","Season","FanPts","ZScore","",
@@ -171,6 +178,10 @@ qbdata <- setNames(qbdata,c("Year","Player","Age","Season","Round","Overall",
 rbdata <- read.csv("RBdata.csv")
 rbdata <- transform(rbdata,
                     TD. = as.numeric(sub("%","",TD.)),
+                    Market.Share = as.numeric(sub("%","",Market.Share)),
+                    Team.Rush...20 = as.numeric(sub("%","",Team.Rush...20)),
+                    Team.Rush...10 = as.numeric(sub("%","",Team.Rush...10)),
+                    Team.Rush...5 = as.numeric(sub("%","",Team.Rush...5)),
                     Rec. = as.numeric(sub("%","",Rec.)),
                     TD..1 = as.numeric(sub("%","",TD..1)),
                     Total.TD. = as.numeric(sub("%","",Total.TD.)),
@@ -206,13 +217,13 @@ rbdata <- setNames(rbdata,c("Year","Player","Age","Season","Round","Overall",
                             "Team","HeadCoach","OffCoordinator","DefCoordinator","SOS",
                             "Oline","Games","RushAtt","RushYards","YPC","RushTDs",
                             "RuAtt/G","RuYPG","RushTD%","Targets","Receptions","Reception%","RecYards",
-                            "RecTDs","Targets/G","Receptions/G","YPR","RecYPG","RecTD%","Touches",
+                            "RecTDs","Targets/G","MarketShare","Receptions/G","YPR","RecYPG","RecTD%","Touches",
                             "TotalYards","TotalTDs","YPT","TotalYPG","TotalTD%","ReturnYards",
                             "RZ.RushAtt<20","RZ.RushYards<20","RZ.RushTDs<20","RZ.%RushAtt<20",
-                            "RZ.RushTD%<20","RZ.%RushTD<20","RZ.RushAtt<10","RZ.RushYards<10",
-                            "RZ.RushTDs<10","RZ.%RushAtt<10","RZ.RushTD%<10","RZ.%RushTD<10",
+                            "RZ.RushTD%<20","RZ.%RushTD<20","RZ.TeamRush%<20","RZ.RushAtt<10","RZ.RushYards<10",
+                            "RZ.RushTDs<10","RZ.%RushAtt<10","RZ.RushTD%<10","RZ.%RushTD<10","RZ.TeamRush%<10",
                             "RZ.RushAtt<5","RZ.RushYards<5","RZ.RushTDs<5","RZ.%RushAtt<5",
-                            "RZ.RushTD%<5","RZ.%RushTD<5","RZ.Targets<20","RZ.Receptions<20",
+                            "RZ.RushTD%<5","RZ.%RushTD<5","RZ.TeamRush%<5","RZ.Targets<20","RZ.Receptions<20",
                             "RZ.Rec%<20","RZ.RecYards<20","RZ.RecTDs<20","RZ.%Targets<20",
                             "RZ.RecTD%<20","RZ.%RecTD<20","RZ.TeamTarget%<20","RZ.Targets<10","RZ.Receptions<10",
                             "RZ.Rec%<10","RZ.RecYards<10","RZ.RecTDs<10","RZ.%Targets<10",
@@ -299,7 +310,7 @@ ui <- dashboardPage(
   dashboardHeader(title = "FF Statistics",
                   tags$li(a(img(src = 'logo.png',height = "30px"),
                             style = "padding-top:10px; padding-bottom:10px;"),
-                          class = "dropdown")),
+                            class = "dropdown")),
   
   dashboardSidebar(
     sidebarMenu(
@@ -329,7 +340,8 @@ ui <- dashboardPage(
     menuItem("Z-Score Analysis", tabName = "zscore", icon = icon("bar-chart"),
              menuSubItem("Datatable",tabName = "zdata"),
              menuSubItem("Graphs",tabName = "zgraph")),
-    menuItem("Download Data", tabName = "download", icon = icon("download"))
+    menuItem("Download Data", tabName = "download", icon = icon("download")),
+    menuItem("Recommended Sites", tabName = "sites", icon = icon("check-square"))
     )
   ),
   
@@ -411,7 +423,7 @@ ui <- dashboardPage(
             br(),
             br(),
             strong("Defense Data"),
-              ("- Two seperate datatables:"),
+              ("- Two separate datatables:"),
             br(),
               ("1) Team Data - a datatable that breaks down statlines for the top fantasy scorer each defense allowed to each position (QB, RB, WR, TE) by week"),
             br(),
@@ -631,20 +643,20 @@ ui <- dashboardPage(
                 Team = c("Team","HeadCoach","OffCoordinator","DefCoordinator","SOS","Oline"),
                 Rushing = c("RushAtt","RushYards","YPC","RushTDs","RuAtt/G","RuYPG","RuTD%"),
                 Receiving = c("Targets","Receptions","Reception%","RecYards","RecTDs","Targets/G",
-                              "Receptions/G","YPR","ReYPG","RecTD%"),
+                              "MarketShare","Receptions/G","YPR","ReYPG","RecTD%"),
                 Total = c("Touches","TotalYards","TotalTDs","YPT","TotalYPG","TotalTD%","ReturnYards"),
                 RedZone20 = c("RZ.RushAtt<20","RZ.RushYards<20","RZ.RushTDs<20","RZ.%RushAtt<20",
-                              "RZ.RushTD%<20","RZ.%RushTD<20","RZ.Targets<20","RZ.Receptions<20",
+                              "RZ.RushTD%<20","RZ.%RushTD<20","RZ.TeamRush%<20","RZ.Targets<20","RZ.Receptions<20",
                               "RZ.Rec%<20","RZ.RecYards<20","RZ.RecTDs<20","RZ.%Targets<20",
                               "RZ.RecTD%<20","RZ.%RecTD<20","RZ.TeamTarget%<20","RZ.Touches<20","RZ.TotalYards<20",
                               "RZ.TotalTDs<20","RZ.%Touches<20","RZ.TotalTD%<20","RZ.%TotalTD<20"),
                 RedZone10 = c("RZ.RushAtt<10","RZ.RushYards<10","RZ.RushTDs<10","RZ.%RushAtt<10",
-                              "RZ.RushTD%<10","RZ.%RushTD<10","RZ.Targets<10","RZ.Receptions<10",
+                              "RZ.RushTD%<10","RZ.%RushTD<10","RZ.TeamRush%<10","RZ.Targets<10","RZ.Receptions<10",
                               "RZ.Rec%<10","RZ.RecYards<10","RZ.RecTDs<10","RZ.%Targets<10",
                               "RZ.RecTD%<10","RZ.%RecTD<10","RZ.TeamTarget%<10","RZ.Touches<10","RZ.TotalYards<10",
                               "RZ.TotalTDs<10","RZ.%Touches<10","RZ.TotalTD%<10","RZ.%TotalTD<10"),
                 RedZone5 = c("RZ.RushAtt<5","RZ.RushYards<5","RZ.RushTDs<5","RZ.%RushAtt<5",
-                             "RZ.RushTD%<5","RZ.%RushTD<5"),
+                             "RZ.RushTD%<5","RZ.%RushTD<5","RZ.TeamRush%<5"),
                 Fantasy = c("FPts(PPR)","FPts(1/2PPR)","FPts(STD)","PPG(PPR)","PPG(1/2PPR)",
                             "PPG(STD)","PosRank(PPR)","PosRank(1/2PPR)","PosRank(STD)",
                             "PPTouch(PPR)","PPTouch(1/2PPR)","PPTouch(STD)","FPfromRec",
@@ -782,7 +794,25 @@ ui <- dashboardPage(
                                      choices = c("Consistency", "Weekly", "Yearly","Defenses",
                                                  "Defenses (Avg)","QB Database","RB Database",
                                                  "WR Database","TE Database","IDP Database","ZScore")))),
-            fluidRow(column(4, downloadButton("downloadData", "Download"))))
+            fluidRow(column(4, downloadButton("downloadData", "Download")))),
+    
+    tabItem(tabName = "sites",
+            h1("Support the Site!"),
+            br(),
+            strong("Patreon"),
+            tagList("- ", url_patreon),
+
+            br(),
+            br(),
+            br(),
+            br(),
+            h1("Recommended Sites to Visit!"),
+            br(),
+            column(2, logo_dynastyer),
+            column(2, logo_dff),
+            column(2, logo_rotoballer)
+            )
+    
     )
 )
 )
