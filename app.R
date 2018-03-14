@@ -1,10 +1,6 @@
-# FF Statistics test page
-
 library(shiny)
-library(shinyjs)
 library(shinydashboard)
 library(DT)
-library(rsconnect)
 
 zscores <- read.csv("zscores.csv")
 colnames(zscores) <- c("Year","Player","Age","Season","FanPts","ZScore","",
