@@ -364,6 +364,13 @@ ui <- dashboardPage(
                               @media (min-width:768px) {
                               .content {
                               padding-top: 80px!important;
+                              }
+                              }
+
+                              @media (max-width:767px) {
+                              .skin-black .main-header>.logo {
+                              text-align: left;
+                              }
                               }'))),
     
     tabItems(
