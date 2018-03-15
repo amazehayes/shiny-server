@@ -2418,7 +2418,7 @@ server <- function(input, output) {
            "Consistency" = consistency, "Weekly" = total_weekly_data, "Yearly" = yearly,
            "Defenses" = defenses,"Defenses (Avg)" = defenses_avg,"QB Database" = qbdata,
            "RB Database" = rbdata,"WR Database" = wrdata,"TE Database" = tedata,
-           "IDP Database" = idpyear)
+           "IDP Database" = idpyear, "Z-Score" = zscores)
   })
   
   output$downloadData <- downloadHandler(
