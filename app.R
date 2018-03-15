@@ -4,9 +4,9 @@ library(DT)
 
 url_thrive <- a("Thrive Fantasy", href="http://bit.ly/A_Hayes", target="_blank")
 url_patreon <- a("FF Statistics Patreon", href="https://www.patreon.com/ffstatistics", target="_blank")
-logo_dynastyer <- tags$a(img(src="dynastyer.png",height="150px",width="150px"),href="https://www.dynastyer.com/")
-logo_dff <- tags$a(img(src="dff.png",height="150px",width="150px"),href="https://dynastyfootballfactory.com/")
-logo_rotoballer <- tags$a(img(src="rotoballer.png",height="150px",width="150px"),href="https://www.rotoballer.com/")
+logo_dynastyer <- tags$a(img(src="dynastyer.png",height="150px",width="150px"),href="https://www.dynastyer.com/", target="_blank")
+logo_dff <- tags$a(img(src="dff.png",height="150px",width="150px"),href="https://dynastyfootballfactory.com/", target="_blank")
+logo_rotoballer <- tags$a(img(src="rotoballer.png",height="150px",width="150px"),href="https://www.rotoballer.com/", target="_blank")
 
 
 zscores <- read.csv("zscores.csv")
