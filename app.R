@@ -9,10 +9,10 @@ logo_dff <- tags$a(img(src="dff.png",height="150px",width="150px"),href="https:/
 logo_rotoballer <- tags$a(img(src="rotoballer.png",height="150px",width="150px"),href="https://www.rotoballer.com/", target="_blank")
 
 adp <- read.csv("adp.csv")
-adpqb <- adp[adp$Position == "QB",c(1:7,15:17)]
-adprb <- adp[adp$Position == "RB",c(1:3,8:14,15:17)]
-adpwr <- adp[adp$Position == "WR",c(1:3,11:17)]
-adpte <- adp[adp$Position == "TE",c(1:3,11:17)]
+adpqb <- adp[adp$Position == "QB",c(1:9,17)]
+adprb <- adp[adp$Position == "RB",c(1:5,10:17)]
+adpwr <- adp[adp$Position == "WR",c(1:5,13:17)]
+adpte <- adp[adp$Position == "TE",c(1:5,13:17)]
 
 zscores <- read.csv("zscores.csv")
 colnames(zscores) <- c("Year","Player","Age","Season","FanPts","ZScore","",
