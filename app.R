@@ -737,6 +737,8 @@ ui <- dashboardPage(
                                      value = 0, min = 0, max = 1, step = 0.01)),
              column(2, numericInput("off_numberB", "Points Per Pass Compl:",
                                     value = 0, min = 0, max = 1, step = 0.01)),
+             column(2, numericInput("off_numberL", "Points Per Pass Incompl:",
+                                    value = 0, min = -2, max = 0, step = 0.01)),
              column(2, numericInput("off_numberC", "Points Per Pass Yard:",
                                     value = 0.04, min = 0, max = 1, step = 0.01)),
              column(2, numericInput("off_numberD", "Points Per Pass TD:",
@@ -2176,8 +2178,9 @@ server <- function(input, output) {
   output$offyearly <- DT::renderDataTable({
     
     fanptsqb <- offyearqb$FP + (offyearqb$PassAtt*input$off_numberA) + (offyearqb$PassComp*input$off_numberB) +
+      ((offyearqb$PassAtt-offyearqb$PassComp)*input$off_numberL) +
       ((offyearqb$PassYards*input$off_numberC)-(offyearqb$PassYards/25)) +
-      ((offyearqb$PassTDs*input$off_numberD)-(offyearqb$PassTDs*4)) -
+      ((offyearqb$PassTDs*input$off_numberD)-(offyearqb$PassTDs*4)) +
       ((offyearqb$INTs*input$off_numberE)+(offyearqb$INTs*2)) +
       (offyearqb$RushAtt*input$off_numberF) + ((offyearqb$RushYards*input$off_numberH)-(offyearqb$RushYards*0.1)) +
       ((offyearqb$RushTDs*input$off_numberI)-(offyearqb$RushTDs*6)) + (offyearqb$ReturnYards*input$off_numberK)
