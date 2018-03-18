@@ -808,7 +808,7 @@ ui <- dashboardPage(
             br(),
             fluidRow(
               column(4,  selectInput("dataset", "Choose a dataset:",
-                                     choices = c("Consistency", "Weekly", "Yearly","Defenses",
+                                     choices = c("Consistency", "Weekly", "Yearly","ADP","Defenses",
                                                  "Defenses (Avg)","QB Database","RB Database",
                                                  "WR Database","TE Database","IDP Database","ZScore")))),
             fluidRow(column(4, downloadButton("downloadData", "Download")))),
