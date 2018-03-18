@@ -8,6 +8,11 @@ logo_dynastyer <- tags$a(img(src="dynastyer.png",height="150px",width="150px"),h
 logo_dff <- tags$a(img(src="dff.png",height="150px",width="150px"),href="https://dynastyfootballfactory.com/", target="_blank")
 logo_rotoballer <- tags$a(img(src="rotoballer.png",height="150px",width="150px"),href="https://www.rotoballer.com/", target="_blank")
 
+adp <- read.csv("adp.csv")
+adpqb <- adp[adp$Position == "QB",c(1:7,15:17)]
+adprb <- adp[adp$Position == "RB",c(1:3,8:14,15:17)]
+adpwr <- adp[adp$Position == "WR",c(1:3,11:17)]
+adpte <- adp[adp$Position == "TE",c(1:3,11:17)]
 
 zscores <- read.csv("zscores.csv")
 colnames(zscores) <- c("Year","Player","Age","Season","FanPts","ZScore","",
@@ -326,6 +331,7 @@ ui <- dashboardPage(
     menuItem("Yearly Data", tabName = "yearly", icon = icon("table"),
              menuSubItem("Yearly Datatable", tabName = "yearlydata"),
              menuSubItem("Yearly Chart",tabName = "yearlychart")),
+    menuItem("Redraft ADP", tabName = "adp", icon = icon("table")),
     menuItem("Defenses", tabName = "defense", icon = icon("table"),
              menuSubItem("Team Data", tabName = "teamdefense"),
              menuSubItem("Averages", tabName = "avgdefense")),
@@ -422,6 +428,10 @@ ui <- dashboardPage(
               ("2) Chart and datatable of each player's yeary production (rank) since 2010."),
             br(),
             br(),
+            strong("Redraft ADP"),
+              ("- Datatable fo redraft ADP for every year since 2010, including yearly stats"),
+            br(),
+            br(),
             strong("Defense Data"),
               ("- Two separate datatables:"),
             br(),
@@ -460,6 +470,13 @@ ui <- dashboardPage(
             div(img(src = 'logo.png', height=200,width=200), style="text-align: right;")
             
             ),
+    
+    tabItem(tabName = "adp",
+            fluidRow(
+              column(4, selectInput("adp_position", "Choose Position:",
+                                    c("All","QB","RB","WR","TE"))),
+              column(4, selectInput("adp_year", "Select Year:", c("All",unique(as.character(adp$Year)))))),
+            fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("adpdata"))),
     
     tabItem(tabName = "tool",
             fluidRow(
@@ -2430,6 +2447,51 @@ server <- function(input, output) {
     }
   )
   
+  output$adpdata <- renderDataTable({
+    
+    if(input$adp_position == "All" & input$adp_year == "All") {
+      adp <- adp
+    }
+    
+    if(input$adp_position == "All" & input$adp_year != "All") {
+      adp <- adp[adp$Year == input$adp_year,]
+    }
+    
+    if(input$adp_position == "QB" & input$adp_year == "All") {
+      adp <- adpqb
+    }
+    
+    if(input$adp_position == "QB" & input$adp_year != "All") {
+      adp <- adpqb[adpqb$Year == input$adp_year,]
+    }
+    
+    if(input$adp_position == "RB" & input$adp_year == "All") {
+      adp <- adprb
+    }
+    
+    if(input$adp_position == "RB" & input$adp_year != "All") {
+      adp <- adprb[adprb$Year == input$adp_year,]
+    }
+    
+    if(input$adp_position == "WR" & input$adp_year == "All") {
+      adp <- adpwr
+    }
+    
+    if(input$adp_position == "WR" & input$adp_year != "All") {
+      adp <- adpwr[adpwr$Year == input$adp_year,]
+    }
+    
+    if(input$adp_position == "TE" & input$adp_year == "All") {
+      adp <- adpte
+    }
+    
+    if(input$adp_position == "TE" & input$adp_year != "All") {
+      adp <- adpte[adpte$Year == input$adp_year,]
+    }
+    
+    adp
+    
+  }, rownames = FALSE,filter = "top", options = list(lengthMenu = c(12,24,36,50,100)))
   
 }
 
