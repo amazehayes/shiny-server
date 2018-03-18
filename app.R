@@ -429,7 +429,7 @@ ui <- dashboardPage(
             br(),
             br(),
             strong("Redraft ADP"),
-              ("- Datatable fo redraft ADP for every year since 2010, including yearly stats"),
+              ("- Datatable of redraft ADP for every year since 2010, including yearly stats"),
             br(),
             br(),
             strong("Defense Data"),
