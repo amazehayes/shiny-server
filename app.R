@@ -126,7 +126,9 @@ offyearflex2 <- subset(offyear[,c(1:5,12:21)],position != "QB")
 idpyear <- read.csv("idpyearly.csv")
 idpyear <- setNames(idpyear, c("Year","Player","Pos","Team","Games","Tackles","Assists",
                                "Sacks","PassDef","INTs","FumbleForced","FumbleRec","Safeties",
-                               "TDs","ReturnYards","FP","FP/G","PosRank"))
+                               "TDs","ReturnYards","FP","FP/G","PosRank","Age","Round","Overall",
+                               "Season","HeadCoach","OffCoordinator","DefCoordinator",
+                               "Tackles/G","Assists/G","Sacks/G","PassDef/G","INT/G","RetYards/G"))
 
 positionidp <- idpyear$Pos
 idpyear2 <- idpyear[,1:15]
@@ -339,7 +341,8 @@ ui <- dashboardPage(
              menuSubItem("Quarterback", tabName = "data_qb"),
              menuSubItem("Running Back", tabName = "data_rb"),
              menuSubItem("Wide Receiver", tabName = "data_wr"),
-             menuSubItem("Tight End", tabName = "data_te")),
+             menuSubItem("Tight End", tabName = "data_te"),
+             menuSubItem("IDP", tabName = "data_idp")),
     menuItem("Custom Fantasy Charts", tabName = "custom", icon = icon("wrench"),
              menuSubItem("Offense", tabName = "customoff"),
              menuSubItem("Defense", tabName = "customdef")),
@@ -728,6 +731,22 @@ ui <- dashboardPage(
                                                "Reception%","RecYards","RecTDs")))),
               fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("tedata")))),
     
+    tabItem(tabName = "data_idp",
+            fluidPage(
+              fluidRow(
+                column(4, selectInput("idp_vars","Select Column(s):", choices = list(
+                  Player = c("Year","Player","Pos","Age","Season","Games"),
+                  Draft = c("Round","Overall"),
+                  Team = c("Team","HeadCoach","OffCoordinator","DefCoordinator"),
+                  Defense = c("Tackles","Assists","Sacks","PassDef","INTs","FumbleForced",
+                              "FumbleRec","Safeties","TDs","ReturnYards","Tackles/G",
+                              "Assists/G","Sacks/G","PassDef/G","INT/G","RetYards/G"),
+                  Fantasy = c("FP","FP/G","PosRank")
+                ),multiple = TRUE,selected = c("Year","Player","Team","Pos","Games","Tackles",
+                                               "Assists","Sacks","INTs","FumbleForced",
+                                               "FumbleRec")))),
+              fluidRow(style = "overflow-x: scroll", DT::dataTableOutput("idpdata")))),
+    
     tabItem(tabName = "customoff",
             fluidRow(
               column(4, selectInput("offyear_pos","Select Position:",
@@ -820,7 +839,10 @@ ui <- dashboardPage(
             br(),
             strong("Patreon"),
             tagList("- ", url_patreon),
-
+            br(),
+            br(),
+            strong("Thrive Fantasy"),
+            tagList("- Download the BRAND NEW DFS app (iOS only) and make a $10 deposit upon creating an account using THIS LINK:", url_thrive),
             br(),
             br(),
             br(),
@@ -2129,7 +2151,7 @@ server <- function(input, output) {
         qbdata[,input$qb_vars, drop = FALSE]
       }
       , rownames = FALSE, filter = "top", 
-      options = list(lengthMenu = c(10,25,50,100))
+      options = list(lengthMenu = c(25,50,100))
 
     )
   })
@@ -2142,7 +2164,7 @@ server <- function(input, output) {
         rbdata[,input$rb_vars, drop = FALSE]
       }
       , rownames = FALSE,filter = "top",
-      options = list(lengthMenu = c(10,25,50,100))
+      options = list(lengthMenu = c(25,50,100))
       
     )
   })
@@ -2155,7 +2177,7 @@ server <- function(input, output) {
         wrdata[,input$wr_vars, drop = FALSE]
       }
       , rownames = FALSE,filter = "top",
-      options = list(lengthMenu = c(10,25,50,100))
+      options = list(lengthMenu = c(25,50,100))
       
     ) 
     
@@ -2169,7 +2191,21 @@ server <- function(input, output) {
         tedata[,input$te_vars, drop = FALSE]
       }
       , rownames = FALSE,filter = "top",
-      options = list(lengthMenu = c(10,25,50,100))
+      options = list(lengthMenu = c(25,50,100))
+      
+    ) 
+    
+  })
+  
+  #IDP Database
+  output$idpdata <- DT::renderDataTable({
+    DT::datatable(
+      
+      if(!is.null(input$idp_vars)) {
+        idpyear[,input$idp_vars, drop = FALSE]
+      }
+      , rownames = FALSE,filter = "top",
+      options = list(lengthMenu = c(25,50,100))
       
     ) 
     
@@ -2255,7 +2291,7 @@ server <- function(input, output) {
   
   output$defyearly <- renderDataTable({
     
-    fanptsdl <- idpyeardl$FP + ((idpyeardl$Tackle*input$def_numberA)-idpyeardl$Tackle) +
+    fanptsdl <- idpyeardl$FP + ((idpyeardl$Tackles*input$def_numberA)-idpyeardl$Tackles) +
       ((idpyeardl$Assists*input$def_numberB)-(idpyeardl$Assists*0.5)) +
       ((idpyeardl$Sacks*input$def_numberC)-(idpyeardl$Sacks*4)) +
       ((idpyeardl$PassDef*input$def_numberD)-idpyeardl$PassDef) +
@@ -2266,7 +2302,7 @@ server <- function(input, output) {
       ((idpyeardl$TDs*input$def_numberI)-(idpyeardl$TDs*6)) + (idpyeardl$ReturnYards*input$def_numberJ)
     avgdl <- round(fanptsdl/idpyeardl$Games,2)
     
-    fanptsdb <- idpyeardb$FP + ((idpyeardb$Tackle*input$def_numberA)-idpyeardb$Tackle) +
+    fanptsdb <- idpyeardb$FP + ((idpyeardb$Tackles*input$def_numberA)-idpyeardb$Tackles) +
       ((idpyeardb$Assists*input$def_numberB)-(idpyeardb$Assists*0.5)) +
       ((idpyeardb$Sacks*input$def_numberC)-(idpyeardb$Sacks*4)) +
       ((idpyeardb$PassDef*input$def_numberD)-idpyeardb$PassDef) +
@@ -2277,7 +2313,7 @@ server <- function(input, output) {
       ((idpyeardb$TDs*input$def_numberI)-(idpyeardb$TDs*6)) + (idpyeardb$ReturnYards*input$def_numberJ)
     avgdb <- round(fanptsdb/idpyeardb$Games,2)
     
-    fanptslb <- idpyearlb$FP + ((idpyearlb$Tackle*input$def_numberA)-idpyearlb$Tackle) +
+    fanptslb <- idpyearlb$FP + ((idpyearlb$Tackles*input$def_numberA)-idpyearlb$Tackles) +
       ((idpyearlb$Assists*input$def_numberB)-(idpyearlb$Assists*0.5)) +
       ((idpyearlb$Sacks*input$def_numberC)-(idpyearlb$Sacks*4)) +
       ((idpyearlb$PassDef*input$def_numberD)-idpyearlb$PassDef) +
@@ -2288,7 +2324,7 @@ server <- function(input, output) {
       ((idpyearlb$TDs*input$def_numberI)-(idpyearlb$TDs*6)) + (idpyearlb$ReturnYards*input$def_numberJ)
     avglb <- round(fanptslb/idpyearlb$Games,2)
     
-    fanpts <- idpyear$FP + ((idpyear$Tackle*input$def_numberA)-idpyear$Tackle) +
+    fanpts <- idpyear$FP + ((idpyear$Tackles*input$def_numberA)-idpyear$Tackles) +
       ((idpyear$Assists*input$def_numberB)-(idpyear$Assists*0.5)) +
       ((idpyear$Sacks*input$def_numberC)-(idpyear$Sacks*4)) +
       ((idpyear$PassDef*input$def_numberD)-idpyear$PassDef) +
