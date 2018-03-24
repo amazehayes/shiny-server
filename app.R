@@ -7,6 +7,7 @@ url_patreon <- a("FF Statistics Patreon", href="https://www.patreon.com/ffstatis
 logo_dynastyer <- tags$a(img(src="dynastyer.png",height="150px",width="150px"),href="https://www.dynastyer.com/", target="_blank")
 logo_dff <- tags$a(img(src="dff.png",height="150px",width="150px"),href="https://dynastyfootballfactory.com/", target="_blank")
 logo_rotoballer <- tags$a(img(src="rotoballer.png",height="150px",width="150px"),href="https://www.rotoballer.com/", target="_blank")
+logo_dlf <- tags$a(img(src="dlf.png",height="150px",width="150px"),href="https://www.dynastyleaguefootball.com/", target="_blank")
 
 adp <- read.csv("adp.csv")
 adpqb <- adp[adp$Position == "QB",c(1:9,17)]
