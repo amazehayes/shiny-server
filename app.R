@@ -15,9 +15,9 @@ total <- setNames(total, c("Year","Player","Position","Age","Season","Round","Ov
                            "Oline","Games","PassAtt","PassComp","Comp%","PassYards","PassTDs","INTs",
                            "Att/G","Comp/G","YPA","YPG","TD/G","INT/G","TD/INT","TD%","INT%",
                            "RZ.PassAtt<20","RZ.PassComp<20","RZ.Comp%<20","RZ.TDs<20","RZ.INTs<20",
-                           "RZ.TD%<20","%PassTDs<20","RZ.INT%<20","%INTs<20","RZ.TD/INT<20",
+                           "RZ.TD%<20","RZ.%PassTDs<20","RZ.INT%<20","RZ.%INTs<20","RZ.TD/INT<20",
                            "RZ.PassAtt<10","RZ.PassComp<10","RZ.Comp%<10","RZ.TDs<10","RZ.INTs<10",
-                           "RZ.TD%<10","%PassTDs<10","RZ.INT%<10","%INTs<10","RZ.TD/INT<10",
+                           "RZ.TD%<10","RZ.%PassTDs<10","RZ.INT%<10","RZ.%INTs<10","RZ.TD/INT<10",
                            "RushAtt","RushYards","YPC","RushTDs","RuAtt/G","RuYPG","RushTD%",
                            "RZ.RushAtt<20","RZ.RushYards<20","RZ.RushTDs<20","RZ.%RushAtt<20",
                            "RZ.RushTD%<20","RZ.%RushTD<20","RZ.TeamRush%<20","RZ.RushAtt<10","RZ.RushYards<10",
@@ -35,12 +35,12 @@ total <- setNames(total, c("Year","Player","Position","Age","Season","Round","Ov
                            "RZ.Rec%<10","RZ.RecTDs<10","RZ.%Targets<10","RZ.RecTD%<10",
                            "RZ.%RecTD<10","RZ.TeamTarget%<10",
                            "Tackles","Assists","Sacks","PassDef","INTs","FumbleForced",
-                           "FumbleRec","Safeties","DefTDs","Tackles/G","Assists/G","Sacks/G","PassDef/G",
-                           "INT/G","RetYards/G","FPts(4pt/TD)","FPts(6pt/TD)",
-                           "FPts(1/2PPR)","FPts(STD)","FPts(IDP)","PPG(IDP)","PPG(4pt/TD)","PPG(6pt/TD)","PPG(1/2PPR)",
+                           "FumbleRec","Safeties","DefTDs","ReturnYards/G","Tackles/G","Assists/G","Sacks/G","PassDef/G",
+                           "INT/G","RetYards/G","FPts(4pt/TD)","FPts(6pt/TD)","FPts(PPR)",
+                           "FPts(1/2PPR)","FPts(STD)","FPts(IDP)","PPG(IDP)","PPG(4pt/TD)","PPG(6pt/TD)","PPG(PPR)","PPG(1/2PPR)",
                            "PPG(STD)","PPAtt(4pt/TD)","PPAtt(6pt/TD)","PPTarget(PPR)","PPTarget(1/2PPR)",
                            "PPTarget(STD)","PPTouch(PPR)","PPTouch(1/2PPR)","PPTouch(STD)",
-                           "PosRank(4pt/TD)","PosRank(6pt/TD)","PosRank(1/2PPR)","PosRank(STD)","PosRank(IDP)",
+                           "PosRank(4pt/TD)","PosRank(6pt/TD)","PosRank(PPR)","PosRank(1/2PPR)","PosRank(STD)","PosRank(IDP)",
                            "FPfromYards","FPfromTDs","FPfromRush","FPfromRec",
                            "YardMonster","TDdepend","MobileQB","PPRMachine"))
 
@@ -821,11 +821,11 @@ ui <- dashboardPage(
                 Defense = c("Tackles","Assists","Sacks","PassDef","INTs","FumbleForced",
                             "FumbleRec","Safeties","DefTDs","Tackles/G","Assists/G","Sacks/G","PassDef/G",
                             "INT/G"),
-                Fantasy = c("FPts(4pt/TD)","FPts(6pt/TD)",
-                            "FPts(1/2PPR)","FPts(STD)","FPts(IDP)","PPG(IDP)","PPG(4pt/TD)","PPG(6pt/TD)","PPG(1/2PPR)",
+                Fantasy = c("FPts(4pt/TD)","FPts(6pt/TD)","FPts(PPR)",
+                            "FPts(1/2PPR)","FPts(STD)","FPts(IDP)","PPG(IDP)","PPG(4pt/TD)","PPG(6pt/TD)","PPG(PPR)","PPG(1/2PPR)",
                             "PPG(STD)","PPAtt(4pt/TD)","PPAtt(6pt/TD)","PPTarget(PPR)","PPTarget(1/2PPR)",
                             "PPTarget(STD)","PPTouch(PPR)","PPTouch(1/2PPR)","PPTouch(STD)",
-                            "PosRank(4pt/TD)","PosRank(6pt/TD)","PosRank(1/2PPR)","PosRank(STD)","PosRank(IDP)",
+                            "PosRank(4pt/TD)","PosRank(6pt/TD)","PosRank(PPR)","PosRank(1/2PPR)","PosRank(STD)","PosRank(IDP)",
                             "FPfromYards","FPfromTDs","FPfromRush","FPfromRec",
                             "YardMonster","TDdepend","MobileQB","PPRMachine")
               ), multiple = TRUE, selected = ))),
@@ -836,9 +836,9 @@ ui <- dashboardPage(
                                     step = 1, value = c(min(total$Age),max(total$Age))))),
             fluidRow(
               column(4, sliderInput("query_draft","Select Draft Round",0,max(total$Round),
-                                    step = 1,value = c(1,max(total$Round)))),
+                                    step = 1,value = c(0,max(total$Round)))),
               column(4, sliderInput("query_pick","Select Draft Pick",0,max(total$Overall),
-                                    step = 1,value = c(1,max(total$Overall))))),
+                                    step = 1,value = c(0,max(total$Overall))))),
             br(),
             br(),
             fluidRow(
@@ -2585,7 +2585,7 @@ server <- function(input, output) {
     
     if(!is.null(input$query_col)) {
       df <- total[total$Season <= input$query_season[2] & total$Season >= input$query_season[1] & total$Overall <= input$query_pick[2] & total$Overall >= input$query_pick[1] & total$Round <= input$query_draft[2] & total$Round >= input$query_draft[1] & total$Age <= input$query_age[2] & total$Age >= input$query_age[1] & total$Year <= input$query_year[2] & total$Year >= input$query_year[1] & total$Position == input$query_pos, c("Year","Player","Position","Age","Season","Round","Overall",
-                                                                                                                                                                                                                                                                                                                                                                                                                                             "Team",input$query_col)]
+                                                                                                                                                                                                                                                                                                                                                                                                                                             "Team","Games",input$query_col)]
     }
     
     df
