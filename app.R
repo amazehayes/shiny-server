@@ -952,6 +952,7 @@ ui <- dashboardPage(
             br(),
             column(2, logo_dynastyer),
             column(2, logo_dff),
+            column(2, logo_dlf),
             column(2, logo_rotoballer)
             )
     
